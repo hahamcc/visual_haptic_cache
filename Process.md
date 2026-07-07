@@ -129,6 +129,79 @@ Artifacts:
 
 ## Progress Log
 
+### 2026-07-07 Environment Setup
+
+Completed:
+
+- Installed Miniconda under `/home/cheng/miniconda3`.
+- Created the Conda environment `haptic-cache`.
+- Installed Python 3.10, NumPy, Pillow, PyYAML, pandas, matplotlib, OpenCV, PyTorch, torchvision, and torchaudio.
+- Added `environment.yml` for reproducible environment creation.
+
+Findings:
+
+- The environment uses CPU PyTorch: `torch.cuda.is_available()` is `False`.
+- Verified imports for `numpy`, `PIL`, `yaml`, `pandas`, `matplotlib`, `cv2`, `torch`, `torchvision`, and `torchaudio`.
+- `python -m py_compile src/*.py` passes inside the Conda environment.
+
+Problems:
+
+- CUDA is not available in the current environment.
+
+Next:
+
+- Use `conda activate haptic-cache` before Phase 2 training work.
+- If GPU support is needed later, inspect the system CUDA driver and replace CPU PyTorch with the matching CUDA build.
+
+Artifacts:
+
+- `/home/cheng/miniconda3/envs/haptic-cache`
+- `environment.yml`
+
+### 2026-07-07 Phase 1 Rebuild
+
+Completed:
+
+- Added Phase 1 rebuild code for manifest building, tactile contact detection, makesense sensor label parsing, interpolated sensor tracks, region sample generation, and debug visualization.
+- Parsed `data/makesense/images/labels/makesense_labels.csv`.
+- Built a labeled-record manifest from `/mnt/data/chi/visgel/seen/images`.
+- Generated sensor labels, sensor tracks, contact index, region samples, heatmaps, and Phase 1 debug images.
+
+Findings:
+
+- Makesense labels contain 593 rows, 297 labeled images, and 296 complete `sensor_tip` + `sensor_base` images.
+- One image is incomplete: `0_rec_00052_probe050_frame000196.jpg` only has `sensor_tip`.
+- The labeled subset covers 50 records and 18,200 aligned RGB/touch frames.
+- Contact detection found all 50 labeled records after lowering the tactile-difference threshold to `0.8`.
+- Contact detection matches filename-derived contact frames well for most records: median absolute error is 0 frames.
+- One clear outlier remains: `rec_00007`, detected contact frame 229 vs filename-derived contact frame 100.
+- The region dataset currently has 296 samples: 237 train, 29 val, 30 test.
+
+Problems:
+
+- The current environment has `python3`, `Pillow`, `numpy`, and `PyYAML`, but not `torch`, `cv2`, `pandas`, or `matplotlib`.
+- Because `torch` is not available, this phase prepares label/track artifacts but does not train a neural sensor localizer yet.
+- `rec_00007` should be manually inspected before it is trusted for model training.
+
+Next:
+
+- User should inspect `outputs/debug/phase1/region_dataset/overlays/` and `outputs/debug/phase1/contact_detection/`.
+- After Phase 1 is accepted, start Phase 2: Tiny U-Net or another lightweight contact heatmap baseline.
+
+Artifacts:
+
+- `src/build_manifest.py`
+- `src/detect_contact_frame.py`
+- `src/sensor_localizer.py`
+- `src/build_region_dataset.py`
+- `scripts/phase1_rebuild.sh`
+- `data/processed/manifest.csv`
+- `data/processed/contact_index.csv`
+- `data/processed/sensor_labels.csv`
+- `data/processed/sensor_tracks.csv`
+- `data/processed/region_dataset/region_samples.csv`
+- `outputs/debug/phase1/`
+
 ### 2026-07-07
 
 Completed:

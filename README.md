@@ -18,6 +18,20 @@
 - `docs/`: 历史论文阅读、思路整理、阶段回顾和前情资料
 - `configs/default.yaml`: 默认配置入口，后续路径和阈值尽量放在这里
 
+## 环境
+
+本项目使用 Conda 环境 `haptic-cache`：
+
+```bash
+conda activate haptic-cache
+```
+
+如果需要重建环境，可以使用：
+
+```bash
+conda env create -f environment.yml
+```
+
 ## 当前重建路线
 
 第一阶段先恢复数据与标签基础：

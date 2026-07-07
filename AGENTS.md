@@ -87,16 +87,18 @@ Dataset records may use names like `rec_000xx` or similar episode identifiers.
 
 1. Do not delete files unless the user explicitly asks for deletion.
 2. Do not modify `.gitignore` unless the user explicitly asks.
-3. Do not commit or push automatically unless the user explicitly asks.
-4. Do not put large datasets, videos, images, `.npy`, `.npz`, `.pth`, `.pt`, checkpoints, or generated experiment outputs into Git.
-5. Before editing files, explain which files will change and why.
-6. Prefer small, incremental changes over large rewrites.
-7. Do not revert unrelated user changes.
-8. Do not stage unrelated files. In particular, do not stage `docs/` unless the user explicitly asks.
-9. Keep configuration values in `configs/` instead of hard-coding paths and thresholds.
-10. Keep experiment notes in `notes/experiment_log.md` or `notes/rebuild_log.md` when relevant.
-11. After editing, summarize changed files, main logic, how to test, and whether a Git commit is recommended.
-12. If a command may require network access, large downloads, or writes outside the workspace, request approval first when required by the environment.
+3. Do not commit or push automatically unless the user explicitly asks, except for the daily closeout workflow below.
+4. Daily closeout: before ending each work day or long work session, check `git status`, stage only intended source/docs/config files, commit finished work with a clear message, and push the commit to GitHub.
+5. During daily closeout, never include large data, generated outputs, model weights, unrelated files, or `docs/` unless the user explicitly asks.
+6. Do not put large datasets, videos, images, `.npy`, `.npz`, `.pth`, `.pt`, checkpoints, or generated experiment outputs into Git.
+7. Before editing files, explain which files will change and why.
+8. Prefer small, incremental changes over large rewrites.
+9. Do not revert unrelated user changes.
+10. Do not stage unrelated files. In particular, do not stage `docs/` unless the user explicitly asks.
+11. Keep configuration values in `configs/` instead of hard-coding paths and thresholds.
+12. Keep experiment notes in `notes/experiment_log.md` or `notes/rebuild_log.md` when relevant.
+13. After editing, summarize changed files, main logic, how to test, and whether a Git commit is recommended.
+14. If a command may require network access, large downloads, or writes outside the workspace, request approval first when required by the environment.
 
 ## Coding and Experiment Conventions
 

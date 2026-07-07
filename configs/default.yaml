@@ -1,0 +1,57 @@
+dataset:
+  root: /mnt/data/chi/visgel/seen/images
+  split: "0"
+  vision_name: vision
+  touch_name: touch
+  image_exts:
+    - .jpg
+    - .jpeg
+    - .png
+
+makesense:
+  images_dir: data/makesense/images
+  labels_csv: data/makesense/images/labels/makesense_labels.csv
+
+outputs:
+  processed_dir: data/processed
+  phase1_debug_dir: outputs/debug/phase1
+
+manifest:
+  output_csv: data/processed/manifest.csv
+  summary_json: data/processed/manifest_summary.json
+
+sensor_localizer:
+  labels_output_csv: data/processed/sensor_labels.csv
+  tracks_output_csv: data/processed/sensor_tracks.csv
+  records_output_txt: data/processed/makesense_records.txt
+  summary_json: data/processed/sensor_label_summary.json
+  debug_dir: outputs/debug/phase1/sensor_labels
+  debug_samples: 24
+  track_end: contact
+
+contact_detection:
+  output_csv: data/processed/contact_index.csv
+  summary_json: data/processed/contact_summary.json
+  records_file: data/processed/makesense_records.txt
+  resize_width: 96
+  resize_height: 96
+  baseline_frames: 10
+  min_frame: 5
+  threshold_abs: 0.8
+  threshold_std_factor: 6.0
+  threshold_peak_ratio: 0.0
+  consecutive_frames: 3
+  debug_dir: outputs/debug/phase1/contact_detection
+  debug_records: 20
+
+region_dataset:
+  output_csv: data/processed/region_dataset/region_samples.csv
+  heatmap_dir: data/processed/region_dataset/heatmaps
+  debug_dir: outputs/debug/phase1/region_dataset
+  debug_samples: 30
+  heatmap_width: 192
+  heatmap_height: 128
+  gaussian_sigma: 4.0
+  split_train: 0.8
+  split_val: 0.1
+  split_test: 0.1
