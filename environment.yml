@@ -1,5 +1,6 @@
 name: haptic-cache
 channels:
+  - nvidia
   - pytorch
   - conda-forge
   - defaults
@@ -14,4 +15,4 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  - cpuonly
+  - pytorch-cuda=12.4

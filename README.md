@@ -26,6 +26,18 @@
 conda activate haptic-cache
 ```
 
+环境配置默认使用 CUDA 版 PyTorch：
+
+```bash
+python -c "import torch; print(torch.version.cuda); print(torch.cuda.is_available())"
+```
+
+如果 `torch.version.cuda` 有版本号但 `torch.cuda.is_available()` 是 `False`，优先检查系统 NVIDIA driver：
+
+```bash
+nvidia-smi
+```
+
 如果需要重建环境，可以使用：
 
 ```bash

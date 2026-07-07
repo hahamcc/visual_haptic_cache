@@ -193,6 +193,34 @@ Artifacts:
 - `outputs/metrics/sensor_localizer_predictions.csv`
 - `outputs/debug/phase1/sensor_localizer_model/`
 
+### 2026-07-07 CUDA Environment Update
+
+Completed:
+
+- Updated `environment.yml` to use CUDA PyTorch with `pytorch-cuda=12.4`.
+- Removed CPU-only PyTorch packages from the local `haptic-cache` Conda environment.
+- Installed CUDA builds of `pytorch`, `torchvision`, and `torchaudio`.
+
+Findings:
+
+- Conda now has `pytorch 2.4.0 py3.10_cuda12.4_cudnn9.1.0_0`.
+- `torch.version.cuda` now reports `12.4`.
+- `torch.cuda.is_available()` is still `False` because the system NVIDIA driver is not reachable.
+- `nvidia-smi` fails with: cannot communicate with the NVIDIA driver.
+
+Problems:
+
+- The project environment is CUDA-ready, but GPU training still cannot start until the host NVIDIA driver is working in this session.
+
+Next:
+
+- Re-run `nvidia-smi` after the server/driver issue is fixed.
+- Once `nvidia-smi` works, verify PyTorch with `torch.cuda.is_available()` before retraining larger models.
+
+Artifacts:
+
+- `environment.yml`
+
 ### 2026-07-07 Phase 1 Rebuild
 
 Completed:
