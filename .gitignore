@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+conda-env/
+
+# Editor
+.vscode/
+.idea/
+
+# Secrets
+.env
+*.key
+*.pem
+auth.json
+token.json
+
+# Large data and outputs
+data/
+datasets/
+outputs/
+runs/
+logs/
+checkpoints/
+weights/
+
+# Model / array / video / image outputs
+*.pth
+*.pt
+*.ckpt
+*.npy
+*.npz
+*.mp4
+*.avi
+*.mov
+*.png
+*.jpg
+*.jpeg
+
+# OS
+.DS_Store
+Thumbs.db
