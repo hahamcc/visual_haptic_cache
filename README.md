@@ -42,6 +42,20 @@ conda env create -f environment.yml
 - 生成 pre-contact 样本和 Gaussian contact heatmap 标签
 - 保存可视化 debug 图用于检查
 
+Sensor localizer 训练入口：
+
+```bash
+conda activate haptic-cache
+bash scripts/train_sensor_localizer.sh
+```
+
+训练结果默认写入：
+
+- `checkpoints/sensor_localizer/`
+- `outputs/metrics/sensor_localizer_metrics.json`
+- `outputs/metrics/sensor_localizer_predictions.csv`
+- `outputs/debug/phase1/sensor_localizer_model/`
+
 第二阶段恢复最小预测与检索闭环：
 
 - 训练 Tiny U-Net 或类似轻量模型预测 future contact heatmap

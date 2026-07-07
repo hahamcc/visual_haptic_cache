@@ -158,6 +158,41 @@ Artifacts:
 - `/home/cheng/miniconda3/envs/haptic-cache`
 - `environment.yml`
 
+### 2026-07-07 Sensor Localizer Training
+
+Completed:
+
+- Added a lightweight Tiny U-Net sensor localizer that predicts two heatmaps: `sensor_tip` and `sensor_base`.
+- Trained the localizer from `data/processed/sensor_labels.csv` using the Conda environment `haptic-cache`.
+- Saved model checkpoints, metrics, predictions, and visual debug overlays.
+
+Findings:
+
+- Training used CPU PyTorch for 80 epochs.
+- Split counts are 237 train, 29 validation, and 30 test samples.
+- Validation median mean error is about 5.62 px; test median mean error is about 5.14 px.
+- Validation PCK@16 and test PCK@16 are both 100%.
+- Tip localization is stronger than base localization. Validation tip median is about 2.92 px, while base median is about 8.06 px.
+
+Problems:
+
+- CUDA is still unavailable, so local training is slower than a GPU run.
+- The worst validation/test samples mostly come from `sensor_base`, with base errors around 10-15 px.
+
+Next:
+
+- Use this localizer as the Phase 1 sensor geometry baseline.
+- If direction quality becomes a bottleneck during contact heatmap training, add a coordinate regression head or upweight the base heatmap loss.
+
+Artifacts:
+
+- `src/train_sensor_localizer.py`
+- `scripts/train_sensor_localizer.sh`
+- `checkpoints/sensor_localizer/best.pt`
+- `outputs/metrics/sensor_localizer_metrics.json`
+- `outputs/metrics/sensor_localizer_predictions.csv`
+- `outputs/debug/phase1/sensor_localizer_model/`
+
 ### 2026-07-07 Phase 1 Rebuild
 
 Completed:

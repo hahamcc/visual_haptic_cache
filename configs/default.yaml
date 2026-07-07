@@ -28,6 +28,20 @@ sensor_localizer:
   debug_dir: outputs/debug/phase1/sensor_labels
   debug_samples: 24
   track_end: contact
+  model:
+    input_width: 192
+    input_height: 128
+    gaussian_sigma: 2.5
+    batch_size: 16
+    epochs: 80
+    learning_rate: 0.001
+    weight_decay: 0.00001
+    seed: 42
+    checkpoint_dir: checkpoints/sensor_localizer
+    metrics_json: outputs/metrics/sensor_localizer_metrics.json
+    predictions_csv: outputs/metrics/sensor_localizer_predictions.csv
+    debug_dir: outputs/debug/phase1/sensor_localizer_model
+    debug_samples: 24
 
 contact_detection:
   output_csv: data/processed/contact_index.csv
