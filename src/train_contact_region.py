@@ -36,8 +36,10 @@ PREDICTION_FIELDS = [
     "pck_32",
     "pck_48",
     "bbox_hit",
+    "box48_hit",
     "top5_hit_48",
     "top5_bbox_hit",
+    "top5_box48_hit",
     "topk_points",
 ]
 
@@ -226,6 +228,18 @@ def topk_points(
     return points
 
 
+def draw_box(
+    draw: ImageDraw.ImageDraw,
+    x: float,
+    y: float,
+    box_size: int,
+    color: str,
+    width: int = 3,
+) -> None:
+    half = box_size / 2.0
+    draw.rectangle((x - half, y - half, x + half, y + half), outline=color, width=width)
+
+
 def evaluate(
     model: nn.Module,
     loader: DataLoader,
@@ -248,6 +262,8 @@ def evaluate(
     bbox_hits: list[bool] = []
     top5_hits: list[bool] = []
     top5_bbox_hits: list[bool] = []
+    box48_hits: list[bool] = []
+    top5_box48_hits: list[bool] = []
     outlier_errors: list[float] = []
     normal_errors: list[float] = []
 
@@ -277,14 +293,22 @@ def evaluate(
                     abs(x - float(target_x)) <= bbox_half_size and abs(y - float(target_y)) <= bbox_half_size
                     for x, y, _ in scaled_points
                 )
+                box48_half = 24.0
+                top5_box48_hit = any(
+                    abs(x - float(target_x)) <= box48_half and abs(y - float(target_y)) <= box48_half
+                    for x, y, _ in scaled_points
+                )
                 errors.append(error)
                 pck16.append(error <= 16.0)
                 pck32.append(error <= 32.0)
                 pck48.append(error <= 48.0)
                 bbox_hit = abs_x <= bbox_half_size and abs_y <= bbox_half_size
+                box48_hit = abs_x <= box48_half and abs_y <= box48_half
                 bbox_hits.append(bbox_hit)
+                box48_hits.append(box48_hit)
                 top5_hits.append(top5_hit)
                 top5_bbox_hits.append(top5_bbox_hit)
+                top5_box48_hits.append(top5_box48_hit)
                 if is_outlier:
                     outlier_errors.append(error)
                 else:
@@ -310,8 +334,10 @@ def evaluate(
                         "pck_32": "1" if error <= 32.0 else "0",
                         "pck_48": "1" if error <= 48.0 else "0",
                         "bbox_hit": "1" if bbox_hit else "0",
+                        "box48_hit": "1" if box48_hit else "0",
                         "top5_hit_48": "1" if top5_hit else "0",
                         "top5_bbox_hit": "1" if top5_bbox_hit else "0",
+                        "top5_box48_hit": "1" if top5_box48_hit else "0",
                         "topk_points": ";".join(f"{x:.3f},{y:.3f},{score:.6f}" for x, y, score in scaled_points),
                     }
                 )
@@ -326,8 +352,10 @@ def evaluate(
         "pck_32": float(np.mean(pck32)) if pck32 else None,
         "pck_48": float(np.mean(pck48)) if pck48 else None,
         "bbox_hit": float(np.mean(bbox_hits)) if bbox_hits else None,
+        "box48_hit": float(np.mean(box48_hits)) if box48_hits else None,
         "top5_hit_48": float(np.mean(top5_hits)) if top5_hits else None,
         "top5_bbox_hit": float(np.mean(top5_bbox_hits)) if top5_bbox_hits else None,
+        "top5_box48_hit": float(np.mean(top5_box48_hits)) if top5_box48_hits else None,
         "normal_median_error_px": float(np.median(normal_errors)) if normal_errors else None,
         "outlier_median_error_px": float(np.median(outlier_errors)) if outlier_errors else None,
     }
@@ -340,19 +368,19 @@ def heatmap_preview(heatmap_path: str | Path, size: tuple[int, int]) -> Image.Im
     return ImageOps.colorize(Image.fromarray(arr, mode="L").resize(size), black="black", white="red")
 
 
-def draw_prediction_overlay(row: dict, output_path: Path, title: str | None = None) -> None:
+def draw_prediction_overlay(row: dict, output_path: Path, box_size: int, title: str | None = None) -> None:
     image = Image.open(row["vision_path"]).convert("RGB")
     draw = ImageDraw.Draw(image)
     target = (float(row["target_x"]), float(row["target_y"]))
     pred = (float(row["pred_x"]), float(row["pred_y"]))
-    draw.ellipse((target[0] - 8, target[1] - 8, target[0] + 8, target[1] + 8), outline="lime", width=4)
-    draw.ellipse((pred[0] - 8, pred[1] - 8, pred[0] + 8, pred[1] + 8), outline="magenta", width=4)
+    draw_box(draw, target[0], target[1], box_size, "lime", 4)
+    draw_box(draw, pred[0], pred[1], box_size, "magenta", 4)
     draw.line((target[0], target[1], pred[0], pred[1]), fill="white", width=2)
     for point in row["topk_points"].split(";")[1:]:
         x_text, y_text, _ = point.split(",")
         x = float(x_text)
         y = float(y_text)
-        draw.ellipse((x - 5, y - 5, x + 5, y + 5), outline="yellow", width=2)
+        draw_box(draw, x, y, box_size, "yellow", 2)
     if row["is_contact_outlier"] == "1":
         draw.rectangle((4, 4, 170, 28), fill="black")
         draw.text((10, 9), "contact outlier rec_00007", fill="orange")
@@ -370,13 +398,19 @@ def draw_prediction_overlay(row: dict, output_path: Path, title: str | None = No
     canvas.save(output_path)
 
 
-def save_debug_predictions(predictions: list[dict], rows_by_name: dict[str, dict], output_dir: Path, limit: int) -> None:
+def save_debug_predictions(
+    predictions: list[dict],
+    rows_by_name: dict[str, dict],
+    output_dir: Path,
+    limit: int,
+    box_size: int,
+) -> None:
     ensure_dir(output_dir)
     for idx, pred in enumerate(predictions[:limit]):
         row = {**pred, **rows_by_name[pred["image_name"]]}
         output_path = output_dir / f"{idx:03d}_{Path(pred['image_name']).stem}_proposal.jpg"
-        title = f"err={pred['error_px']} pck48={pred['pck_48']} top5={pred['top5_hit_48']}"
-        draw_prediction_overlay(row, output_path, title)
+        title = f"err={pred['error_px']} box48={pred['box48_hit']} top5box48={pred['top5_box48_hit']}"
+        draw_prediction_overlay(row, output_path, box_size, title)
 
 
 def crop_mean_rgb(image_path: str, x: float, y: float, crop_size: int) -> np.ndarray:
@@ -414,7 +448,7 @@ def cache_feature(row: dict, x: float, y: float, crop_size: int) -> np.ndarray:
     return np.concatenate([numeric, crop], axis=0)
 
 
-def save_retrieval_debug(row: dict, output_path: Path) -> None:
+def save_retrieval_debug(row: dict, output_path: Path, box_size: int) -> None:
     query = Image.open(row["query_vision_path"]).convert("RGB")
     retrieved = Image.open(row["retrieved_vision_path"]).convert("RGB")
     touch = Image.open(row["retrieved_touch_path"]).convert("RGB") if row["retrieved_touch_path"] else Image.new("RGB", query.size, "black")
@@ -426,7 +460,7 @@ def save_retrieval_debug(row: dict, output_path: Path) -> None:
         draw = ImageDraw.Draw(image)
         x = float(row[x_key])
         y = float(row[y_key])
-        draw.ellipse((x - 8, y - 8, x + 8, y + 8), outline=color, width=4)
+        draw_box(draw, x, y, box_size, color, 4)
     canvas = Image.new("RGB", (query.width * 3, query.height), "black")
     canvas.paste(query, (0, 0))
     canvas.paste(retrieved, (query.width, 0))
@@ -450,6 +484,7 @@ def build_retrieval_outputs(
     output_json: Path,
     debug_dir: Path,
     debug_samples: int,
+    box_size: int,
 ) -> dict:
     train_predictions = [pred for pred in predictions if pred["dataset_split"] == "train"]
     query_predictions = [pred for pred in predictions if pred["dataset_split"] in {"val", "test"}]
@@ -507,7 +542,7 @@ def build_retrieval_outputs(
     write_csv_rows(output_csv, retrieval_rows, RETRIEVAL_FIELDS)
     for idx, row in enumerate(retrieval_rows[:debug_samples]):
         output_path = debug_dir / f"{idx:03d}_{Path(row['query_image_name']).stem}_retrieval.jpg"
-        save_retrieval_debug(row, output_path)
+        save_retrieval_debug(row, output_path, box_size)
     summary = {
         "cache_size": len(cache_rows),
         "queries": len(retrieval_rows),
@@ -521,7 +556,7 @@ def build_retrieval_outputs(
     return summary
 
 
-def train_contact_region(config_path: str, epochs_override: int | None = None) -> dict:
+def train_contact_region(config_path: str, epochs_override: int | None = None, eval_only: bool = False) -> dict:
     cfg = load_config(config_path)
     region_cfg = cfg["contact_region"]
     rows = read_csv_rows(project_path(region_cfg["samples_csv"]))
@@ -540,6 +575,7 @@ def train_contact_region(config_path: str, epochs_override: int | None = None) -
     topk = int(region_cfg["topk"])
     suppression_radius = int(region_cfg["topk_suppression_radius"])
     bbox_half_size = float(region_cfg["bbox_half_size"])
+    contact_box_size = int(region_cfg.get("contact_box_size", 48))
 
     train_dataset = ContactRegionDataset(rows_by_split["train"], input_width, input_height, float(region_cfg["geometry_sigma"]))
     val_dataset = ContactRegionDataset(rows_by_split["val"], input_width, input_height, float(region_cfg["geometry_sigma"]))
@@ -572,53 +608,59 @@ def train_contact_region(config_path: str, epochs_override: int | None = None) -
     history = []
     start = time.time()
 
-    for epoch in range(1, epochs + 1):
-        model.train()
-        train_losses = []
-        for batch in train_loader:
-            inputs = batch["input"].to(device)
-            targets = batch["target"].to(device)
-            optimizer.zero_grad(set_to_none=True)
-            preds = model(inputs)
-            loss = criterion(preds, targets)
-            loss.backward()
-            optimizer.step()
-            train_losses.append(float(loss.item()))
-        val_summary, _ = evaluate(
-            model, val_loader, device, input_width, input_height, "val", topk, suppression_radius, bbox_half_size
-        )
-        train_loss = float(np.mean(train_losses)) if train_losses else 0.0
-        val_loss = float(val_summary["loss"]) if val_summary["loss"] is not None else 0.0
-        history.append(
-            {
-                "epoch": epoch,
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "val_median_error_px": val_summary["median_error_px"],
-                "val_pck_48": val_summary["pck_48"],
-                "val_top5_hit_48": val_summary["top5_hit_48"],
-            }
-        )
-        state = {
-            "model": model.state_dict(),
-            "config": region_cfg,
-            "epoch": epoch,
-            "val_loss": val_loss,
-            "val_summary": val_summary,
-        }
-        torch.save(state, last_path)
-        if val_loss < best_val:
-            best_val = val_loss
-            torch.save(state, best_path)
-        if epoch == 1 or epoch == epochs or epoch % 10 == 0:
-            print(
-                f"epoch={epoch:03d} train_loss={train_loss:.6f} "
-                f"val_loss={val_loss:.6f} val_median_px={val_summary['median_error_px']:.3f} "
-                f"val_pck48={val_summary['pck_48']:.3f}"
+    if eval_only and not best_path.exists():
+        raise FileNotFoundError(f"Missing checkpoint for --eval-only: {best_path}")
+
+    if not eval_only:
+        for epoch in range(1, epochs + 1):
+            model.train()
+            train_losses = []
+            for batch in train_loader:
+                inputs = batch["input"].to(device)
+                targets = batch["target"].to(device)
+                optimizer.zero_grad(set_to_none=True)
+                preds = model(inputs)
+                loss = criterion(preds, targets)
+                loss.backward()
+                optimizer.step()
+                train_losses.append(float(loss.item()))
+            val_summary, _ = evaluate(
+                model, val_loader, device, input_width, input_height, "val", topk, suppression_radius, bbox_half_size
             )
+            train_loss = float(np.mean(train_losses)) if train_losses else 0.0
+            val_loss = float(val_summary["loss"]) if val_summary["loss"] is not None else 0.0
+            history.append(
+                {
+                    "epoch": epoch,
+                    "train_loss": train_loss,
+                    "val_loss": val_loss,
+                    "val_median_error_px": val_summary["median_error_px"],
+                    "val_pck_48": val_summary["pck_48"],
+                    "val_top5_hit_48": val_summary["top5_hit_48"],
+                }
+            )
+            state = {
+                "model": model.state_dict(),
+                "config": region_cfg,
+                "epoch": epoch,
+                "val_loss": val_loss,
+                "val_summary": val_summary,
+            }
+            torch.save(state, last_path)
+            if val_loss < best_val:
+                best_val = val_loss
+                torch.save(state, best_path)
+            if epoch == 1 or epoch == epochs or epoch % 10 == 0:
+                print(
+                    f"epoch={epoch:03d} train_loss={train_loss:.6f} "
+                    f"val_loss={val_loss:.6f} val_median_px={val_summary['median_error_px']:.3f} "
+                    f"val_pck48={val_summary['pck_48']:.3f}"
+                )
 
     checkpoint = torch.load(best_path, map_location=device, weights_only=False)
     model.load_state_dict(checkpoint["model"])
+    if eval_only:
+        history = checkpoint.get("history", [])
     train_summary, train_predictions = evaluate(
         model, eval_train_loader, device, input_width, input_height, "train", topk, suppression_radius, bbox_half_size
     )
@@ -637,7 +679,13 @@ def train_contact_region(config_path: str, epochs_override: int | None = None) -
     debug_dir = project_path(region_cfg["debug_dir"])
     retrieval_debug_dir = project_path(region_cfg["retrieval_debug_dir"])
     write_csv_rows(predictions_path, all_predictions, PREDICTION_FIELDS)
-    save_debug_predictions(val_predictions + test_predictions, rows_by_name, debug_dir, int(region_cfg["debug_samples"]))
+    save_debug_predictions(
+        val_predictions + test_predictions,
+        rows_by_name,
+        debug_dir,
+        int(region_cfg["debug_samples"]),
+        contact_box_size,
+    )
     retrieval_summary = build_retrieval_outputs(
         all_predictions,
         rows_by_name,
@@ -646,6 +694,7 @@ def train_contact_region(config_path: str, epochs_override: int | None = None) -
         retrieval_json,
         retrieval_debug_dir,
         int(region_cfg["debug_samples"]),
+        contact_box_size,
     )
 
     summary = {
@@ -654,7 +703,10 @@ def train_contact_region(config_path: str, epochs_override: int | None = None) -
         "input_channels": 7,
         "input_width": input_width,
         "input_height": input_height,
+        "contact_box_size": contact_box_size,
         "epochs": epochs,
+        "eval_only": eval_only,
+        "checkpoint_epoch": checkpoint.get("epoch"),
         "elapsed_seconds": round(time.time() - start, 2),
         "split_counts": {name: len(items) for name, items in rows_by_split.items()},
         "contact_outlier_record": "rec_00007",
@@ -677,8 +729,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Train the Phase 2 future contact-region baseline.")
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--epochs", type=int, default=None)
+    parser.add_argument("--eval-only", action="store_true")
     args = parser.parse_args()
-    train_contact_region(args.config, args.epochs)
+    train_contact_region(args.config, args.epochs, args.eval_only)
 
 
 if __name__ == "__main__":

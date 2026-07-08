@@ -248,6 +248,7 @@ Next:
 - Run `bash scripts/train_contact_region.sh` from a terminal with GPU access.
 - Inspect `outputs/debug/phase2/contact_region/` and `outputs/debug/phase2/retrieval/` after the full run.
 - If full-run Top-K proposals still drift to image edges, add a simple valid-region mask or tune the heatmap loss.
+- Use `48x48` boxes for proposal and retrieval visualization, while keeping PCK@48 for historical comparison.
 
 Artifacts:
 
@@ -259,6 +260,24 @@ Artifacts:
 - `outputs/metrics/contact_region_retrieval.csv`
 - `outputs/debug/phase2/contact_region/`
 - `outputs/debug/phase2/retrieval/`
+
+### 2026-07-08 Phase 2 Box Visualization Update
+
+Completed:
+
+- Switched proposal and retrieval visualizations from point markers to `48x48` contact-region boxes.
+- Changed the simple retrieval crop size from `64x64` to `48x48`.
+- Added stricter `box48_hit` and `top5_box48_hit` metrics.
+- Added `--eval-only` to regenerate metrics and debug images from an existing checkpoint without retraining.
+
+Findings:
+
+- Re-evaluating the full-run checkpoint gives validation `box48_hit` about 96.55% and validation `top5_box48_hit` 100%.
+- Test `box48_hit` and `top5_box48_hit` are both 100%.
+
+Next:
+
+- Use the `48x48` box images when judging whether proposals are specific enough for visual-haptic retrieval.
 
 ### 2026-07-07 Phase 1 Rebuild
 

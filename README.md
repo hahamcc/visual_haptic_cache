@@ -97,6 +97,12 @@ bash scripts/train_contact_region.sh --epochs 2
 - `outputs/debug/phase2/contact_region/`
 - `outputs/debug/phase2/retrieval/`
 
+Phase 2 proposal/retrieval 可视化使用 `48x48` 接触区域框：
+
+- 绿色框：真实接触区域
+- 紫色框：Top1 预测接触区域
+- 黄色框：其余 Top-K proposal 区域
+
 ## 项目结构
 
 ```text

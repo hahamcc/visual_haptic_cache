@@ -91,4 +91,5 @@ contact_region:
   topk: 5
   topk_suppression_radius: 6
   bbox_half_size: 48
-  cache_crop_size: 64
+  contact_box_size: 48
+  cache_crop_size: 48
