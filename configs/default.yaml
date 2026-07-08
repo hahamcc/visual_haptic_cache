@@ -69,3 +69,26 @@ region_dataset:
   split_train: 0.8
   split_val: 0.1
   split_test: 0.1
+
+contact_region:
+  samples_csv: data/processed/region_dataset/region_samples.csv
+  checkpoint_dir: checkpoints/contact_region_baseline
+  metrics_json: outputs/metrics/contact_region_baseline.json
+  predictions_csv: outputs/metrics/contact_region_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_retrieval.csv
+  debug_dir: outputs/debug/phase2/contact_region
+  retrieval_debug_dir: outputs/debug/phase2/retrieval
+  debug_samples: 30
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  cache_crop_size: 64

@@ -75,6 +75,28 @@ bash scripts/train_sensor_localizer.sh
 - 复现 median error、PCK@48、bbox hit、top5 bbox hit 等指标
 - 建立简单 train-cache，在验证样本上检索相似历史触觉图
 
+Contact region baseline 训练入口：
+
+```bash
+conda activate haptic-cache
+bash scripts/train_contact_region.sh
+```
+
+如果只想快速检查代码链路：
+
+```bash
+bash scripts/train_contact_region.sh --epochs 2
+```
+
+训练结果默认写入：
+
+- `checkpoints/contact_region_baseline/`
+- `outputs/metrics/contact_region_baseline.json`
+- `outputs/metrics/contact_region_predictions.csv`
+- `outputs/metrics/contact_region_retrieval.csv`
+- `outputs/debug/phase2/contact_region/`
+- `outputs/debug/phase2/retrieval/`
+
 ## 项目结构
 
 ```text

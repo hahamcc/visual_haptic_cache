@@ -221,6 +221,45 @@ Artifacts:
 
 - `environment.yml`
 
+### 2026-07-08 Phase 2 Minimum Loop
+
+Completed:
+
+- Added a Phase 2 contact-region baseline with RGB plus sensor geometry input.
+- Added Top-K contact proposal extraction and metrics.
+- Added simple NumPy train-cache retrieval.
+- Added proposal and retrieval debug visualizations.
+- Ran a 2-epoch CPU smoke test in the Codex environment.
+
+Findings:
+
+- The model input has 7 channels: RGB, tip heatmap, base heatmap, direction-x map, and direction-y map.
+- The smoke test completed end-to-end and produced checkpoints, metrics, predictions, proposal images, and retrieval images.
+- After only 2 CPU epochs, validation median error is about 39.24 px and validation PCK@48 is about 55.17%.
+- These smoke-test metrics are not the target result; they only confirm the pipeline works.
+
+Problems:
+
+- Codex still cannot access `/dev/nvidia*`, so formal training should be launched from the user's terminal where `nvidia-smi` works.
+- Early 2-epoch predictions still include some edge/corner Top-K false positives.
+
+Next:
+
+- Run `bash scripts/train_contact_region.sh` from a terminal with GPU access.
+- Inspect `outputs/debug/phase2/contact_region/` and `outputs/debug/phase2/retrieval/` after the full run.
+- If full-run Top-K proposals still drift to image edges, add a simple valid-region mask or tune the heatmap loss.
+
+Artifacts:
+
+- `src/train_contact_region.py`
+- `scripts/train_contact_region.sh`
+- `checkpoints/contact_region_baseline/best.pt`
+- `outputs/metrics/contact_region_baseline.json`
+- `outputs/metrics/contact_region_predictions.csv`
+- `outputs/metrics/contact_region_retrieval.csv`
+- `outputs/debug/phase2/contact_region/`
+- `outputs/debug/phase2/retrieval/`
+
 ### 2026-07-07 Phase 1 Rebuild
 
 Completed:
