@@ -40,6 +40,14 @@ Current rebuild priority:
 - `outputs/`: local debug images, visualizations, metrics, and experiment outputs. Do not commit generated outputs unless explicitly requested.
 - `checkpoints/`: model weights and training checkpoints. Do not commit weights.
 
+## Data Storage Policy
+
+- Keep large raw datasets, copied image folders, videos, historical experiment dumps, and large generated artifacts outside the repository.
+- Prefer `/mnt/data/cheng` for large project-owned data and reuse existing raw VisGel data under `/mnt/data/...` when available.
+- Keep only small metadata, CSV/JSON indexes, labels, configuration files, scripts, and source code in this repository.
+- Heatmaps and debug images may be generated under `data/processed/` or `outputs/` for local inspection, but they should not be committed unless the user explicitly asks.
+- When expanding the dataset, scripts should reference large files by absolute path instead of copying them into `data/`.
+
 ## Expected Rebuild Modules
 
 Likely modules to rebuild in small steps:
@@ -112,24 +120,47 @@ Dataset records may use names like `rec_000xx` or similar episode identifiers.
 
 ## Current Rebuild Milestones
 
-Phase 1: data and label foundation.
+Phase 1: data and label foundation. Status: basically rebuilt.
 
-- Rebuild RGB/touch manifest.
-- Rebuild tactile-difference contact frame detection.
-- Rebuild or retrain sensor tip/base localizer.
-- Generate pre-contact samples and Gaussian heatmap labels.
-- Save visual debug outputs for inspection.
+- RGB/touch alignment, contact-frame detection, sensor localizer, sensor tracks, and heatmap labels have working rebuild paths.
+- The sensor localizer is strong enough for the current loop: test PCK@16 reached 100% in the first rebuilt run.
+- Continue to inspect debug overlays whenever new records are added, because bad sensor labels will silently damage later retrieval.
 
-Phase 2: minimum prediction and retrieval loop.
+Phase 2: minimum prediction and retrieval loop. Status: contact prediction works; cache retrieval is the current bottleneck.
 
-- Train Tiny U-Net or another lightweight baseline for contact heatmap prediction.
-- Evaluate median error, PCK@48, bbox hit, top5 bbox hit, and latency.
-- Extract Top-K heatmap proposals.
-- Build a simple training cache and retrieve nearest historical samples.
-- Save retrieval comparison visualizations.
+- The 296-sample contact-region baseline reached a strong first recovery: test median error about 6 px and PCK@48/top5 hit@48 about 100%.
+- The expanded 100-record automatic-label run produced 530 samples. It still works, but test top1 quality dropped: median error about 12 px, PCK@48 about 89.8%, and top5 hit@48 about 100%.
+- This means the heatmap model is not random and Top-K proposals are useful, but the current automatic expansion and generalization need more diagnosis.
+- Simple cache retrieval is not yet good enough. It often retrieves the same object category but not the same local contact position, so the tactile image may not match the query contact.
+
+Phase 2.5: dataset expansion and diagnosis. This is the next operational stage.
+
+- Expand beyond the first 100 records only after adding clearer diagnostics.
+- Add metrics by time-to-contact bucket, for example near/mid/far probes, because long-horizon samples appear harder.
+- Audit automatic labels against manual labels and debug overlays before trusting larger training runs.
+- Scale gradually: 100 records for validation, then about 200 records for the next controlled run, then larger splits if metrics and labels remain stable.
+
+Phase 3A: cache retrieval improvement.
+
+- Keep the predicted contact box at `48x48` for now so errors remain visible and the retrieved tactile crop stays specific.
+- Improve cache keys around local contact identity: local crop appearance, predicted box center, sensor direction, time-to-contact, and potentially learned local visual embeddings.
+- Prefer two-stage retrieval: first filter by geometry/motion/contact location, then re-rank by local crop similarity and tactile-related features.
+- Add retrieval metrics that directly measure local mismatch, such as query GT contact point versus retrieved GT contact point distance.
+
+Phase 3B: longer temporal prediction.
+
+- Extend the model input from a short current-frame window to a longer sequence before building complex constraints.
+- Add explicit trajectory features: recent tip/base positions, velocity, direction stability, and time-to-contact.
+- Evaluate whether longer windows improve far time-to-contact samples before changing the model family.
+
+Phase 3C: trajectory-hotspot mutual constraint.
+
+- After longer sequence data is stable, add a trajectory branch and a hotspot/contact branch.
+- Let trajectory features help correct hotspot prediction, and let hotspot features constrain physically plausible trajectory/contact outcomes.
+- Consider Transformer-style temporal attention only after the longer-window baseline shows that temporal information is useful.
 
 Later phases:
 
-- Add a trajectory branch and contact heatmap branch with lightweight mutual constraints.
 - Optimize online latency.
-- Consider FAISS, stronger visual features, contrastive alignment, or generation fallback only after the minimum loop is stable.
+- Consider FAISS when the cache grows beyond what NumPy brute-force KNN can comfortably handle.
+- Consider stronger visual-tactile alignment, contrastive learning, or generation fallback after retrieval has reliable local-position matching.

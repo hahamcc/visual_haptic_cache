@@ -90,9 +90,15 @@ def read_manifest_touch_paths(path: Path) -> dict[tuple[str, str, int], str]:
 def attach_touch_paths(rows: list[dict[str, str]], manifest_csv: Path) -> None:
     touch_by_key = read_manifest_touch_paths(manifest_csv)
     for row in rows:
+        if row.get("touch_path"):
+            continue
         split = row["split"]
         record_id = row["record_id"]
-        contact_frame = int(row["contact_frame_from_name"])
+        contact_frame_text = row.get("contact_frame_from_name") or row.get("contact_frame_detected") or row.get("contact_frame")
+        if not contact_frame_text:
+            row["touch_path"] = ""
+            continue
+        contact_frame = int(contact_frame_text)
         current_frame = int(row["frame_id"])
         row["touch_path"] = touch_by_key.get(
             (split, record_id, contact_frame),
@@ -556,9 +562,16 @@ def build_retrieval_outputs(
     return summary
 
 
-def train_contact_region(config_path: str, epochs_override: int | None = None, eval_only: bool = False) -> dict:
+def train_contact_region(
+    config_path: str,
+    epochs_override: int | None = None,
+    eval_only: bool = False,
+    section: str = "contact_region",
+) -> dict:
     cfg = load_config(config_path)
-    region_cfg = cfg["contact_region"]
+    if section not in cfg:
+        raise KeyError(f"Missing config section: {section}")
+    region_cfg = cfg[section]
     rows = read_csv_rows(project_path(region_cfg["samples_csv"]))
     attach_touch_paths(rows, project_path(cfg["manifest"]["output_csv"]))
     rows_by_name = {row["image_name"]: row for row in rows}
@@ -699,6 +712,7 @@ def train_contact_region(config_path: str, epochs_override: int | None = None, e
 
     summary = {
         "device": str(device),
+        "config_section": section,
         "seed": seed,
         "input_channels": 7,
         "input_width": input_width,
@@ -728,10 +742,11 @@ def train_contact_region(config_path: str, epochs_override: int | None = None, e
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train the Phase 2 future contact-region baseline.")
     parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--section", default="contact_region")
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--eval-only", action="store_true")
     args = parser.parse_args()
-    train_contact_region(args.config, args.epochs, args.eval_only)
+    train_contact_region(args.config, args.epochs, args.eval_only, args.section)
 
 
 if __name__ == "__main__":

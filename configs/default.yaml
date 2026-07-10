@@ -77,8 +77,16 @@ contact_region:
   predictions_csv: outputs/metrics/contact_region_predictions.csv
   retrieval_json: outputs/metrics/contact_region_retrieval.json
   retrieval_csv: outputs/metrics/contact_region_retrieval.csv
+  retrieval_direct_json: outputs/metrics/contact_region_retrieval_direct.json
+  retrieval_direct_csv: outputs/metrics/contact_region_retrieval_direct.csv
+  retrieval_hybrid_json: outputs/metrics/contact_region_retrieval_hybrid.json
+  retrieval_hybrid_csv: outputs/metrics/contact_region_retrieval_hybrid.csv
+  retrieval_compare_json: outputs/metrics/contact_region_retrieval_compare.json
+  retrieval_compare_csv: outputs/metrics/contact_region_retrieval_compare.csv
   debug_dir: outputs/debug/phase2/contact_region
   retrieval_debug_dir: outputs/debug/phase2/retrieval
+  retrieval_direct_debug_dir: outputs/debug/phase2/retrieval_direct
+  retrieval_hybrid_debug_dir: outputs/debug/phase2/retrieval_hybrid
   debug_samples: 30
   input_width: 192
   input_height: 128
@@ -93,3 +101,99 @@ contact_region:
   bbox_half_size: 48
   contact_box_size: 48
   cache_crop_size: 48
+  cache_motion_weight: 1.0
+  cache_visual_weight: 1.0
+
+contact_region_expanded:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  checkpoint_dir: checkpoints/contact_region_expanded
+  metrics_json: outputs/metrics/contact_region_expanded.json
+  predictions_csv: outputs/metrics/contact_region_expanded_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_expanded_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_expanded_retrieval.csv
+  retrieval_direct_json: outputs/metrics/contact_region_expanded_retrieval_direct.json
+  retrieval_direct_csv: outputs/metrics/contact_region_expanded_retrieval_direct.csv
+  retrieval_hybrid_json: outputs/metrics/contact_region_expanded_retrieval_hybrid.json
+  retrieval_hybrid_csv: outputs/metrics/contact_region_expanded_retrieval_hybrid.csv
+  retrieval_compare_json: outputs/metrics/contact_region_expanded_retrieval_compare.json
+  retrieval_compare_csv: outputs/metrics/contact_region_expanded_retrieval_compare.csv
+  debug_dir: outputs/debug/phase26/contact_region_expanded
+  retrieval_debug_dir: outputs/debug/phase26/retrieval
+  retrieval_direct_debug_dir: outputs/debug/phase26/retrieval_direct
+  retrieval_hybrid_debug_dir: outputs/debug/phase26/retrieval_hybrid
+  debug_samples: 30
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  cache_motion_weight: 1.0
+  cache_visual_weight: 1.0
+
+dataset_expansion_audit:
+  splits: all
+  records_csv: data/processed/dataset_expansion_audit_records.csv
+  contact_csv: data/processed/dataset_expansion_contact_sample.csv
+  summary_json: outputs/metrics/dataset_expansion_audit.json
+  history_root: /mnt/data/cheng/contact_policy
+  min_common_frames: 120
+  contact_sample_limit: 100
+  contact_resize_width: 48
+  contact_resize_height: 48
+  ttc_values:
+    - 5
+    - 10
+    - 20
+    - 30
+    - 50
+    - 75
+    - 100
+  sequence_offsets:
+    - 15
+    - 10
+    - 5
+    - 0
+  seed: 42
+
+expanded_region_dataset:
+  split: "0"
+  record_start: 0
+  record_limit: 50
+  output_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset/summary_auto.json
+  heatmap_dir: data/processed/expanded_region_dataset/heatmaps
+  debug_dir: outputs/debug/phase25/expanded_region_dataset
+  debug_samples: 24
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values:
+    - 5
+    - 10
+    - 20
+    - 30
+    - 50
+    - 75
+    - 100
+  sequence_offsets:
+    - 15
+    - 10
+    - 5
+    - 0
+  split_train: 0.8
+  split_val: 0.1
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records:
+    - rec_00007
