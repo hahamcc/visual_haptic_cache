@@ -2079,3 +2079,147 @@ phase4d_oof_cache_confidence_v4:
   target_temperature: 0.02
   listwise_weight: 1.0
   seed: 20260802
+
+phase4e_oof_multiscale_cache_v1:
+  # Phase4E step 1: strict OOF candidate generation; final holdout is rejected in code.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4e_oof_multiscale_cache_v1/checkpoints
+  query_output_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4e_oof_multiscale_cache_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 4
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  seed: 20260803
+
+phase4e_cache_trust_v1:
+  # Phase4E step 2: train only from strict OOF cache outcomes; fold 2 selects the cache-hit gate.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  oof_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4e_cache_trust_v1/checkpoints
+  validation_output_csv: outputs/metrics/phase4e_cache_trust_v1_validation.csv
+  gate_output_json: outputs/cache/phase4e_cache_trust_v1_gate.json
+  metrics_json: outputs/metrics/phase4e_cache_trust_v1.json
+  validation_oof_fold: "2"
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  min_coverage: 0.30
+  target_coverage: 0.40
+  max_coverage: 0.50
+  seed: 20260804
+
+phase4e_multiscale_trust_validation_v1:
+  # Phase4E step 3: one independent development-validation evaluation with frozen trust gate.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  trust_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_cache_trust_v1/checkpoints/best.pt
+  trust_gate_json: outputs/cache/phase4e_cache_trust_v1_gate.json
+  phase4b_validation_csv: outputs/metrics/phase4b_ablation_predicted_embedding_v4_queries.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4e_multiscale_trust_validation_v1/checkpoints
+  query_output_csv: outputs/cache/phase4e_multiscale_trust_validation_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4e_multiscale_trust_validation_v1_candidates.csv
+  trust_output_csv: outputs/metrics/phase4e_multiscale_trust_validation_v1_trust.csv
+  metrics_json: outputs/metrics/phase4e_multiscale_trust_validation_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 4
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  trust_dropout: 0.1
+  seed: 20260805
+
+phase4e_trust_regime_audit_v1:
+  # Phase4E step 4: diagnose online cache-trust signals by anticipation regime using strict OOF only.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  oof_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  output_csv: outputs/metrics/phase4e_trust_regime_audit_v1_queries.csv
+  metrics_json: outputs/metrics/phase4e_trust_regime_audit_v1.json
+
+phase4e_far_cache_gate_v1:
+  # Phase4E step 5: far-only cache quality gate; fold 2 is calibration, not final evaluation.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  oof_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4e_far_cache_gate_v1/checkpoints
+  calibration_output_csv: outputs/metrics/phase4e_far_cache_gate_v1_calibration.csv
+  gate_output_json: outputs/cache/phase4e_far_cache_gate_v1_gate.json
+  metrics_json: outputs/metrics/phase4e_far_cache_gate_v1.json
+  validation_oof_fold: "2"
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  min_coverage: 0.20
+  target_coverage: 0.25
+  max_coverage: 0.35
+  seed: 20260806
+
+phase4e_multiscale_trust_validation_v2:
+  # Phase4E step 6: independent validation, near/mid unified gate plus frozen conservative far gate.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  trust_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_cache_trust_v1/checkpoints/best.pt
+  trust_gate_json: outputs/cache/phase4e_cache_trust_v1_gate.json
+  far_gate_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_far_cache_gate_v1/checkpoints/best.pt
+  far_gate_json: outputs/cache/phase4e_far_cache_gate_v1_gate.json
+  phase4b_validation_csv: outputs/metrics/phase4b_ablation_predicted_embedding_v4_queries.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4e_multiscale_trust_validation_v2/checkpoints
+  query_output_csv: outputs/cache/phase4e_multiscale_trust_validation_v2_queries.csv
+  candidate_output_csv: outputs/cache/phase4e_multiscale_trust_validation_v2_candidates.csv
+  trust_output_csv: outputs/metrics/phase4e_multiscale_trust_validation_v2_trust.csv
+  metrics_json: outputs/metrics/phase4e_multiscale_trust_validation_v2.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 4
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  trust_dropout: 0.1
+  far_gate_dropout: 0.1
+  seed: 20260805
+
+phase4e_final_recipe_v1:
+  # Frozen after Phase4E V2 independent validation; do not alter before the one-time final holdout run.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  c2_checkpoint: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/checkpoints/best.pt
+  cache_ranker_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_multiscale_trust_validation_v2/checkpoints/ranker.pt
+  unified_trust_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_cache_trust_v1/checkpoints/best.pt
+  unified_gate_json: outputs/cache/phase4e_cache_trust_v1_gate.json
+  far_gate_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_far_cache_gate_v1/checkpoints/best.pt
+  far_gate_json: outputs/cache/phase4e_far_cache_gate_v1_gate.json
+  validation_metrics_json: outputs/metrics/phase4e_multiscale_trust_validation_v2.json
+  manifest_json: outputs/cache/phase4e_final_recipe_v1_manifest.json
