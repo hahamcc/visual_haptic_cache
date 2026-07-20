@@ -52,6 +52,7 @@ def freeze(config_path: str, section: str) -> dict:
     if not accepted_improves(report["far_probe75_100"]):
         raise RuntimeError("Cannot freeze: far independent validation does not pass the cache-quality guard.")
     artifacts = {
+        "sensor_localizer": file_fingerprint(project_path(cfg["sensor_checkpoint"])),
         "c2_contact_model": file_fingerprint(project_path(cfg["c2_checkpoint"])),
         "multiscale_cache_ranker": file_fingerprint(project_path(cfg["cache_ranker_checkpoint"])),
         "unified_trust_model": file_fingerprint(project_path(cfg["unified_trust_checkpoint"])),
@@ -59,6 +60,7 @@ def freeze(config_path: str, section: str) -> dict:
         "unified_gate": file_fingerprint(project_path(cfg["unified_gate_json"])),
         "far_gate": file_fingerprint(project_path(cfg["far_gate_json"])),
         "development_split": file_fingerprint(project_path(cfg["samples_csv"])),
+        "final_partition": file_fingerprint(project_path(cfg["final_partition_manifest"])),
         "validation_metrics": file_fingerprint(project_path(cfg["validation_metrics_json"])),
         "recipe_config": file_fingerprint(project_path(config_path)),
     }

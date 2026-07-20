@@ -47,10 +47,23 @@ def fix_partitions(config_path: str, section: str) -> dict:
     root = Path(dataset_cfg["root"])
     default_split = str(dataset_cfg["split"])
     development_groups = development_record_groups(cfg, default_split)
-    final_split = str(cfg.get("final_holdout_split", default_split))
     development = [(split, record_id) for split, records in development_groups for record_id in records]
-    final_holdout = record_ids(int(cfg["final_holdout_start"]), int(cfg["final_holdout_limit"]))
-    final = [(final_split, record_id) for record_id in final_holdout]
+    final_sources = cfg.get("final_holdout_sources")
+    if final_sources:
+        final = [
+            (str(source["split"]), record_id)
+            for source in final_sources
+            for item in source["ranges"]
+            for record_id in record_ids(int(item["start"]), int(item["limit"]))
+        ]
+    else:
+        final_split = str(cfg.get("final_holdout_split", default_split))
+        final = [
+            (final_split, record_id)
+            for record_id in record_ids(int(cfg["final_holdout_start"]), int(cfg["final_holdout_limit"]))
+        ]
+    if len(final) != len(set(final)):
+        raise ValueError("Final-holdout sources overlap")
     overlap = set(development) & set(final)
     if overlap:
         raise ValueError(f"Development/final partitions overlap: {sorted(overlap)}")
@@ -85,8 +98,14 @@ def fix_partitions(config_path: str, section: str) -> dict:
             {"split": split, "range": [records[0], records[-1]]}
             for split, records in development_groups
         ],
-        "final_holdout_records": len(final_holdout),
-        "final_holdout_range": {"split": final_split, "range": [final_holdout[0], final_holdout[-1]]},
+        "final_holdout_records": len(final),
+        "final_holdout_sources": [
+            {"split": split, "range": [records[0], records[-1]]}
+            for split, records in (
+                (split, [record_id for source_split, record_id in final if source_split == split])
+                for split in sorted({split for split, _ in final})
+            )
+        ],
         "raw_completeness": {name: len(values) == 0 for name, values in missing.items()},
     }
     write_json(project_path(cfg["summary_json"]), summary)

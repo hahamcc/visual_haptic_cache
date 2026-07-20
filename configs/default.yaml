@@ -1712,6 +1712,15 @@ phase35_future_record_partitions:
   final_holdout_split: "0"
   final_holdout_start: 950
   final_holdout_limit: 50
+  final_holdout_sources:
+    - split: "0"
+      ranges:
+        - start: 950
+          limit: 50
+    - split: "1"
+      ranges:
+        - start: 1250
+          limit: 50
   output_csv: data/processed/phase35_future_record_partitions.csv
   summary_json: data/processed/phase35_future_record_partitions.json
 
@@ -2215,6 +2224,7 @@ phase4e_multiscale_trust_validation_v2:
 phase4e_final_recipe_v1:
   # Frozen after Phase4E V2 independent validation; do not alter before the one-time final holdout run.
   samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
   c2_checkpoint: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/checkpoints/best.pt
   cache_ranker_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_multiscale_trust_validation_v2/checkpoints/ranker.pt
   unified_trust_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_cache_trust_v1/checkpoints/best.pt
@@ -2222,4 +2232,70 @@ phase4e_final_recipe_v1:
   far_gate_checkpoint: /mnt/data/cheng/haptic-cache/phase4e_far_cache_gate_v1/checkpoints/best.pt
   far_gate_json: outputs/cache/phase4e_far_cache_gate_v1_gate.json
   validation_metrics_json: outputs/metrics/phase4e_multiscale_trust_validation_v2.json
+  final_partition_manifest: data/processed/phase35_future_record_partitions.csv
   manifest_json: outputs/cache/phase4e_final_recipe_v1_manifest.json
+
+expanded_region_dataset_phase35_final_holdout_v1:
+  # One-time final label build: split-0 rec_00950..rec_00999 only, all emitted as dataset_split=test.
+  split: "0"
+  record_start: 950
+  record_limit: 50
+  purpose_partition_manifest: data/processed/phase35_future_record_partitions.csv
+  expected_purpose_partition: final_holdout
+  output_csv: data/processed/phase35_final_holdout_v1/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_final_holdout_v1/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase35_final_holdout_v1/contact_index_auto.csv
+  skipped_csv: data/processed/phase35_final_holdout_v1/skipped_auto.csv
+  summary_json: data/processed/phase35_final_holdout_v1/summary_auto.json
+  record_split_manifest: data/processed/phase35_final_holdout_v1/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_final_holdout_v1/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_final_holdout_v1/debug
+  debug_samples: 50
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.0
+  split_val: 0.0
+  final_holdout_count: 50
+  final_holdout_min_record: 950
+  record_split_seed: 20260807
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
+
+expanded_region_dataset_phase35_final_holdout_v1_split1:
+  # One-time final label build for the untouched split-1 extension rec_01250..rec_01299.
+  split: "1"
+  # record_start is the sorted-directory offset; split-1 starts at rec_01000.
+  record_start: 250
+  record_limit: 50
+  purpose_partition_manifest: data/processed/phase35_future_record_partitions.csv
+  expected_purpose_partition: final_holdout
+  output_csv: data/processed/phase35_final_holdout_v1_split1/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_final_holdout_v1_split1/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase35_final_holdout_v1_split1/contact_index_auto.csv
+  skipped_csv: data/processed/phase35_final_holdout_v1_split1/skipped_auto.csv
+  summary_json: data/processed/phase35_final_holdout_v1_split1/summary_auto.json
+  record_split_manifest: data/processed/phase35_final_holdout_v1_split1/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_final_holdout_v1_split1/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_final_holdout_v1_split1/debug
+  debug_samples: 50
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.0
+  split_val: 0.0
+  final_holdout_count: 50
+  final_holdout_min_record: 1250
+  record_split_seed: 20260808
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
