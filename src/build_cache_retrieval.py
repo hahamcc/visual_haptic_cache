@@ -93,8 +93,7 @@ def draw_box(
     draw.rectangle((x - half, y - half, x + half, y + half), outline=color, width=width)
 
 
-def crop_contact_patch(image_path: str, x: float, y: float, crop_size: int) -> np.ndarray:
-    image = Image.open(image_path).convert("RGB")
+def crop_contact_patch_from_image(image: Image.Image, x: float, y: float, crop_size: int) -> np.ndarray:
     left = int(round(x - crop_size / 2.0))
     top = int(round(y - crop_size / 2.0))
     right = left + crop_size
@@ -112,6 +111,11 @@ def crop_contact_patch(image_path: str, x: float, y: float, crop_size: int) -> n
     return np.asarray(canvas, dtype=np.float32) / 255.0
 
 
+def crop_contact_patch(image_path: str, x: float, y: float, crop_size: int) -> np.ndarray:
+    image = Image.open(image_path).convert("RGB")
+    return crop_contact_patch_from_image(image, x, y, crop_size)
+
+
 def pooled_mean(arr: np.ndarray, grid: int) -> np.ndarray:
     height, width = arr.shape[:2]
     trimmed = arr[: height - height % grid, : width - width % grid]
@@ -127,8 +131,7 @@ def pooled_mean(arr: np.ndarray, grid: int) -> np.ndarray:
     return pooled.reshape(-1).astype(np.float32)
 
 
-def visual_patch_feature(image_path: str, x: float, y: float, crop_size: int) -> np.ndarray:
-    patch = crop_contact_patch(image_path, x, y, crop_size)
+def visual_patch_feature_from_patch(patch: np.ndarray) -> np.ndarray:
     gray = (
         0.299 * patch[:, :, 0]
         + 0.587 * patch[:, :, 1]
@@ -139,7 +142,7 @@ def visual_patch_feature(image_path: str, x: float, y: float, crop_size: int) ->
     gy = np.diff(gray, axis=0, append=gray[-1:, :])
     edge = np.sqrt(gx * gx + gy * gy).astype(np.float32)
 
-    center_margin = max(1, crop_size // 4)
+    center_margin = max(1, min(patch.shape[:2]) // 4)
     center = patch[center_margin:-center_margin, center_margin:-center_margin]
     border = patch.copy()
     border[center_margin:-center_margin, center_margin:-center_margin] = 0.0
@@ -176,6 +179,10 @@ def visual_patch_feature(image_path: str, x: float, y: float, crop_size: int) ->
     )
     layout = np.concatenate([pooled_mean(patch, 4), pooled_mean(edge, 4)], axis=0)
     return np.concatenate([stats.astype(np.float32), layout], axis=0)
+
+
+def visual_patch_feature(image_path: str, x: float, y: float, crop_size: int) -> np.ndarray:
+    return visual_patch_feature_from_patch(crop_contact_patch(image_path, x, y, crop_size))
 
 
 def motion_geometry_feature(row: dict[str, str], x: float, y: float) -> np.ndarray:

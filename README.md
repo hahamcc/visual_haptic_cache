@@ -4,6 +4,14 @@
 
 当前仓库处于重建后的推进阶段：之前的数据、代码、模型权重和实验输出曾经丢失，但 Phase 1/2 的最小闭环已经基本恢复。当前重点不再是证明流程能跑通，而是扩大可靠数据、诊断长时序误差，并改进 cache retrieval 的局部接触匹配。
 
+## 当前状态：2026-07-20
+
+- 当前 C2 模型可在接触前 5、10、20、30、50、75、100 帧预测未来接触区域；输入中的四个观察帧是上下文，不是四帧预测上限。
+- V4 验证集有 837 个 query：C2 Top-1 Box48 为 96.77%，Top-10 覆盖为 99.64%；远距离 `probe75/100` 的 Top-1 为 90.22%，Top-10 为 98.67%。
+- 当前瓶颈是局部触觉缓存排序。正确的历史触觉条目经常在几何过滤后的候选中，但排序模型还不能稳定选中它。
+- 当前路线是：冻结 C2 接触框 -> 局部缓存排序 -> cache-trust/cache-miss 判断 -> 高可信时返回缓存，低可信时交给 fallback/生成模型。
+- split-0 `rec_00950–rec_00999` 是封存的 final holdout，开发期间不读取其预测结果。
+
 ## 项目目标
 
 - 从视频帧中预测接触区域
@@ -187,23 +195,28 @@ Phase 2 proposal/retrieval 可视化使用 `48x48` 接触区域框：
 
 ## 下一步操作方向
 
-优先级 1：数据扩展诊断。
+优先级 1：训练 cache-trust/cache-miss predictor。
 
-- 添加 time-to-contact bucket 指标，按 near/mid/far 或不同 `probe` 值看预测误差。
-- 先把自动标签数据从 100 records 扩到约 200 records，确认指标是否稳定，再继续扩大。
-- 大数据继续放在 `/mnt/data/cheng` 或现有 `/mnt/data/...`，本仓库只保存小型 CSV/JSON、代码、配置和必要 debug 输出。
+- 输入只使用线上可得的信号：缓存 ranker 最优分数、Top-2 margin、手工 key margin、几何/运动特征、probe 和输入质量。
+- 训练监督来自严格 OOF cache-confidence 数据，避免用 query 自己参与训练的 cache-ranker 分数校准阈值。
+- 在验证集上只选择一次保守阈值：高可信返回缓存，低可信标记 `cache miss` 并交给 fallback/生成模型。
 
-优先级 2：cache retrieval 局部匹配。
+严格 OOF cache-confidence 生成入口：
 
-- 增加 retrieval 的局部错误指标：query contact 与 retrieved contact 的距离、retrieved contact 是否落入 query 的 `48x48` box。
-- 改成两阶段检索：先用 contact 坐标、sensor direction、time-to-contact、运动几何做过滤，再用局部 crop 特征或学习到的 embedding 重排。
-- 对局部距离太大的结果标记为 cache miss，不强行返回触觉。
+```bash
+bash scripts/build_phase4d_oof_cache_confidence_v4.sh
+```
 
-优先级 3：更长时序和 trajectory-hotspot 约束。
+优先级 2：冻结开发配方后评估 final holdout。
 
-- 先把输入序列拉长，加入 tip/base 轨迹、速度、方向稳定性和 time-to-contact。
-- 再做 trajectory branch 与 hotspot branch 的双向约束。
-- Transformer、SAM/VGGT、对比学习或大模型特征放到更后面，等长时序 baseline 和 retrieval 诊断稳定后再引入。
+- 在接触模型、缓存 ranker 和 trust threshold 全部固定前，不读取 split-0 `rec_00950–rec_00999` 的预测结果。
+- 最终只报告一次端到端的 contact Box48、tactile MAE、SSIM、mask IoU、cache accept/miss 覆盖率和 far 分桶表现。
+
+优先级 3：继续提升局部缓存表征。
+
+- 保持 C2 接触框的空间约束，不能让触觉相似度单独改变接触位置。
+- 扩充同一物体不同部位、边缘/角点、转向和变速的缓存样本。
+- 在 trust policy 稳定后，再考虑更强的局部视觉-触觉 embedding 或生成 fallback。
 
 ## 项目结构
 

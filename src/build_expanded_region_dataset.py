@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import math
+import random
+import re
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -13,11 +16,12 @@ from PIL import Image, ImageDraw
 from .audit_dataset_expansion import detect_contact_for_record, frame_map
 from .config import load_config, project_path
 from .train_sensor_localizer import TinyUNet, peak_xy
-from .utils import ensure_dir, normalized_vector, write_csv_rows, write_json
+from .utils import ensure_dir, normalized_vector, read_csv_rows, write_csv_rows, write_json
 
 
 SAMPLE_FIELDS = [
     "dataset_split",
+    "record_partition",
     "split",
     "record_id",
     "image_name",
@@ -44,8 +48,15 @@ SAMPLE_FIELDS = [
     "tip_base_distance",
     "target_tip_base_distance",
     "sequence_ready",
+    "trajectory_real_point_count",
+    "trajectory_history_span_frames",
+    "trajectory_padding_ratio",
+    "trajectory_max_frame_gap",
+    "trajectory_cumulative_displacement",
     "heatmap_path",
 ]
+
+RECORD_SPLIT_FIELDS = ["split", "record_id", "dataset_split", "record_partition", "split_seed"]
 
 TRACK_FIELDS = [
     "split",
@@ -103,6 +114,80 @@ def record_splits(records: list[tuple[str, str]], train: float, val: float) -> d
     return out
 
 
+def fixed_record_splits(
+    records: list[tuple[str, str]],
+    train: float,
+    val: float,
+    seed: int,
+    manifest_path: Path | None,
+    final_holdout_count: int | None = None,
+    final_holdout_min_record: int | None = None,
+) -> tuple[dict[tuple[str, str], str], dict[tuple[str, str], str]]:
+    """Create or reuse a predeclared record split before any labels are generated."""
+    records = sorted(records)
+    if manifest_path and manifest_path.exists():
+        with manifest_path.open("r", newline="", encoding="utf-8") as handle:
+            rows = list(csv.DictReader(handle))
+        mapping = {(row["split"], row["record_id"]): row["dataset_split"] for row in rows}
+        partitions = {(row["split"], row["record_id"]): row.get("record_partition", row["dataset_split"]) for row in rows}
+        missing = [record for record in records if record not in mapping]
+        if missing:
+            raise ValueError(f"Fixed record manifest is missing selected records: {missing[:5]}")
+        return mapping, partitions
+
+    rng = random.Random(seed)
+    total = len(records)
+    train_count = int(round(total * train))
+    val_count = int(round(total * val))
+    requested_holdout = int(final_holdout_count) if final_holdout_count is not None else total - train_count - val_count
+    if train_count + val_count + requested_holdout > total:
+        raise ValueError("Configured record split counts exceed selected records")
+    if final_holdout_min_record is None:
+        holdout_candidates = list(records)
+    else:
+        holdout_candidates = []
+        for record in records:
+            match = re.search(r"(\d+)$", record[1])
+            if match and int(match.group(1)) >= final_holdout_min_record:
+                holdout_candidates.append(record)
+    if len(holdout_candidates) < requested_holdout:
+        raise ValueError("Not enough eligible records for the requested fixed final holdout")
+    rng.shuffle(holdout_candidates)
+    holdout_records = set(holdout_candidates[:requested_holdout])
+    shuffled = [record for record in records if record not in holdout_records]
+    rng.shuffle(shuffled)
+    mapping: dict[tuple[str, str], str] = {}
+    partitions: dict[tuple[str, str], str] = {}
+    manifest_rows = []
+    for index, record in enumerate(shuffled):
+        if index < train_count:
+            dataset_split, partition = "train", "train"
+        elif index < train_count + val_count:
+            dataset_split, partition = "val", "validation"
+        else:
+            raise RuntimeError("Unexpected leftover record after fixed split allocation")
+        mapping[record] = dataset_split
+        partitions[record] = partition
+        manifest_rows.append(
+            {
+                "split": record[0], "record_id": record[1], "dataset_split": dataset_split,
+                "record_partition": partition, "split_seed": str(seed),
+            }
+        )
+    for record in sorted(holdout_records):
+        mapping[record] = "test"
+        partitions[record] = "final_holdout"
+        manifest_rows.append(
+            {
+                "split": record[0], "record_id": record[1], "dataset_split": "test",
+                "record_partition": "final_holdout", "split_seed": str(seed),
+            }
+        )
+    if manifest_path:
+        write_csv_rows(manifest_path, manifest_rows, RECORD_SPLIT_FIELDS)
+    return mapping, partitions
+
+
 def make_heatmap(width: int, height: int, x: float, y: float, sigma: float) -> np.ndarray:
     xs = np.arange(width, dtype=np.float32)
     ys = np.arange(height, dtype=np.float32)[:, None]
@@ -118,6 +203,19 @@ def select_records(vision_split_root: Path, start: int, limit: int | None) -> li
     record_ids = sorted(path.name for path in vision_split_root.iterdir() if path.is_dir())
     begin, end = parse_record_range(start, limit)
     return record_ids[begin:end]
+
+
+def validate_purpose_partition(manifest_path: Path, record_ids: list[str], expected_partition: str) -> None:
+    """Prevent a data-building section from accidentally consuming a sealed record range."""
+    rows = read_csv_rows(manifest_path)
+    partition_by_record = {row["record_id"]: row["partition"] for row in rows}
+    missing = [record_id for record_id in record_ids if record_id not in partition_by_record]
+    mismatched = [record_id for record_id in record_ids if partition_by_record.get(record_id) != expected_partition]
+    if missing or mismatched:
+        raise ValueError(
+            f"Purpose-partition validation failed for {manifest_path}: missing={missing}, "
+            f"expected={expected_partition}, mismatched={mismatched}"
+        )
 
 
 def load_sensor_model(checkpoint_path: Path, device: torch.device) -> tuple[TinyUNet, dict]:
@@ -292,10 +390,13 @@ def build_expanded_region_dataset(
     split_override: str | None = None,
     record_start_override: int | None = None,
     record_limit_override: int | None = None,
+    section: str = "expanded_region_dataset",
 ) -> dict:
     cfg = load_config(config_path)
     dataset_cfg = cfg["dataset"]
-    expansion_cfg = cfg["expanded_region_dataset"]
+    if section not in cfg:
+        raise KeyError(f"Missing config section: {section}")
+    expansion_cfg = cfg[section]
     audit_cfg = cfg.get("dataset_expansion_audit", {})
     sensor_model_cfg = cfg["sensor_localizer"]["model"]
     region_cfg = cfg["region_dataset"]
@@ -308,7 +409,24 @@ def build_expanded_region_dataset(
     vision_root = root / dataset_cfg["vision_name"] / split
     touch_root = root / dataset_cfg["touch_name"] / split
     selected_records = select_records(vision_root, record_start, record_limit)
+    purpose_manifest_value = expansion_cfg.get("purpose_partition_manifest")
+    if purpose_manifest_value:
+        validate_purpose_partition(
+            project_path(purpose_manifest_value), selected_records, str(expansion_cfg["expected_purpose_partition"])
+        )
     excluded_records = {str(item) for item in expansion_cfg.get("excluded_records", [])}
+    planned_records = [(split, record_id) for record_id in selected_records if record_id not in excluded_records]
+    manifest_value = expansion_cfg.get("record_split_manifest")
+    manifest_path = project_path(manifest_value) if manifest_value else None
+    planned_split_map, planned_partitions = fixed_record_splits(
+        planned_records,
+        float(expansion_cfg.get("split_train", region_cfg.get("split_train", 0.8))),
+        float(expansion_cfg.get("split_val", region_cfg.get("split_val", 0.1))),
+        int(expansion_cfg.get("record_split_seed", 42)),
+        manifest_path,
+        expansion_cfg.get("final_holdout_count"),
+        expansion_cfg.get("final_holdout_min_record"),
+    )
 
     checkpoint_path = project_path(expansion_cfg.get("sensor_checkpoint", f"{sensor_model_cfg['checkpoint_dir']}/best.pt"))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -327,6 +445,9 @@ def build_expanded_region_dataset(
 
     ttc_values = [int(item) for item in expansion_cfg.get("ttc_values", audit_cfg.get("ttc_values", [5, 10, 20, 30, 50, 75, 100]))]
     sequence_offsets = [int(item) for item in expansion_cfg.get("sequence_offsets", audit_cfg.get("sequence_offsets", [15, 10, 5, 0]))]
+    trajectory_history_frames = int(expansion_cfg.get("trajectory_history_frames", max(sequence_offsets)))
+    trajectory_track_stride = max(int(expansion_cfg.get("trajectory_track_stride", 5)), 1)
+    trajectory_offsets = list(range(0, trajectory_history_frames + 1, trajectory_track_stride))
     heatmap_w = int(region_cfg["heatmap_width"])
     heatmap_h = int(region_cfg["heatmap_height"])
     sigma = float(region_cfg["gaussian_sigma"])
@@ -392,6 +513,8 @@ def build_expanded_region_dataset(
             needed_frames.add(current_frame)
             for offset in sequence_offsets:
                 needed_frames.add(current_frame - offset)
+            for offset in trajectory_offsets:
+                needed_frames.add(current_frame - offset)
         needed_frames = {frame for frame in needed_frames if frame in common_frames}
 
         for frame in sorted(needed_frames):
@@ -455,9 +578,32 @@ def build_expanded_region_dataset(
             ensure_dir(heatmap_path.parent)
             np.save(heatmap_path, heatmap)
             sequence_ready = all((frame_id - offset) in common_frames for offset in sequence_offsets)
+            history_frames = list(range(frame_id - trajectory_history_frames + 1, frame_id + 1))
+            history_predictions = [
+                predictions[(split, record_id, history_frame)]
+                for history_frame in history_frames
+                if (split, record_id, history_frame) in predictions
+            ]
+            history_ids = [
+                history_frame
+                for history_frame in history_frames
+                if (split, record_id, history_frame) in predictions
+            ]
+            if len(history_predictions) >= 2:
+                cumulative_displacement = sum(
+                    math.hypot(float(right["tip_x"]) - float(left["tip_x"]), float(right["tip_y"]) - float(left["tip_y"]))
+                    for left, right in zip(history_predictions[:-1], history_predictions[1:])
+                )
+                history_span = history_ids[-1] - history_ids[0]
+                max_gap = max(right - left for left, right in zip(history_ids[:-1], history_ids[1:]))
+            else:
+                cumulative_displacement = 0.0
+                history_span = 0
+                max_gap = 0
             sample_rows.append(
                 {
-                    "dataset_split": "",
+                    "dataset_split": planned_split_map[(split, record_id)],
+                    "record_partition": planned_partitions[(split, record_id)],
                     "split": split,
                     "record_id": record_id,
                     "image_name": image_name,
@@ -484,12 +630,17 @@ def build_expanded_region_dataset(
                     "tip_base_distance": f"{float(current['tip_base_distance']):.3f}",
                     "target_tip_base_distance": f"{float(target['tip_base_distance']):.3f}",
                     "sequence_ready": "1" if sequence_ready else "0",
+                    "trajectory_real_point_count": str(len(history_predictions)),
+                    "trajectory_history_span_frames": str(history_span),
+                    "trajectory_padding_ratio": f"{1.0 - len(history_predictions) / max(trajectory_history_frames, 1):.6f}",
+                    "trajectory_max_frame_gap": str(max_gap),
+                    "trajectory_cumulative_displacement": f"{cumulative_displacement:.3f}",
                     "heatmap_path": str(heatmap_path),
                 }
             )
             records_with_samples.add((split, record_id))
 
-            if debug_written < debug_samples:
+            if debug_written < debug_samples and planned_split_map[(split, record_id)] != "test":
                 debug_path = debug_dir / "overlays" / f"{debug_written:03d}_{Path(image_name).stem}.jpg"
                 save_debug_overlay(
                     debug_path,
@@ -501,14 +652,6 @@ def build_expanded_region_dataset(
                 )
                 debug_written += 1
 
-    split_map = record_splits(
-        sorted(records_with_samples),
-        float(expansion_cfg.get("split_train", region_cfg.get("split_train", 0.8))),
-        float(expansion_cfg.get("split_val", region_cfg.get("split_val", 0.1))),
-    )
-    for row in sample_rows:
-        row["dataset_split"] = split_map[(row["split"], row["record_id"])]
-
     write_csv_rows(output_csv, sample_rows, SAMPLE_FIELDS)
     write_csv_rows(track_csv, track_rows, TRACK_FIELDS)
     write_csv_rows(contact_csv, contact_rows, CONTACT_FIELDS)
@@ -519,10 +662,18 @@ def build_expanded_region_dataset(
     contact_counts = Counter(row["status"] for row in contact_rows)
     summary = {
         "device": str(device),
+        "config_section": section,
         "split": split,
         "record_start": record_start,
         "record_limit": record_limit,
         "selected_records": len(selected_records),
+        "planned_record_split_counts": dict(Counter(planned_split_map.values())),
+        "record_split_manifest": str(manifest_path) if manifest_path else "",
+        "purpose_partition_manifest": str(project_path(purpose_manifest_value)) if purpose_manifest_value else "",
+        "expected_purpose_partition": expansion_cfg.get("expected_purpose_partition", ""),
+        "record_split_seed": int(expansion_cfg.get("record_split_seed", 42)),
+        "final_holdout_count": int(expansion_cfg.get("final_holdout_count", 0)),
+        "final_holdout_min_record": expansion_cfg.get("final_holdout_min_record"),
         "excluded_records": sorted(excluded_records),
         "contact_status_counts": dict(contact_counts),
         "records_with_samples": len(records_with_samples),
@@ -533,6 +684,8 @@ def build_expanded_region_dataset(
         "skipped_counts": dict(skipped_counts),
         "ttc_values": ttc_values,
         "sequence_offsets": sequence_offsets,
+        "trajectory_history_frames": trajectory_history_frames,
+        "trajectory_track_stride": trajectory_track_stride,
         "quality_filter": {
             "min_confidence": min_confidence,
             "min_tip_base_distance": min_tip_base_distance,
@@ -560,8 +713,9 @@ def main() -> None:
     parser.add_argument("--split", default=None)
     parser.add_argument("--record-start", type=int, default=None)
     parser.add_argument("--record-limit", type=int, default=None)
+    parser.add_argument("--section", default="expanded_region_dataset")
     args = parser.parse_args()
-    build_expanded_region_dataset(args.config, args.split, args.record_start, args.record_limit)
+    build_expanded_region_dataset(args.config, args.split, args.record_start, args.record_limit, args.section)
 
 
 if __name__ == "__main__":

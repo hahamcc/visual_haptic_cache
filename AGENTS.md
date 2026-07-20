@@ -126,41 +126,25 @@ Phase 1: data and label foundation. Status: basically rebuilt.
 - The sensor localizer is strong enough for the current loop: test PCK@16 reached 100% in the first rebuilt run.
 - Continue to inspect debug overlays whenever new records are added, because bad sensor labels will silently damage later retrieval.
 
-Phase 2: minimum prediction and retrieval loop. Status: contact prediction works; cache retrieval is the current bottleneck.
+Phase 2 and Phase 3.5: temporal contact-region prediction. Status: usable C2 baseline, not final evaluation.
 
-- The 296-sample contact-region baseline reached a strong first recovery: test median error about 6 px and PCK@48/top5 hit@48 about 100%.
-- The expanded 100-record automatic-label run produced 530 samples. It still works, but test top1 quality dropped: median error about 12 px, PCK@48 about 89.8%, and top5 hit@48 about 100%.
-- This means the heatmap model is not random and Top-K proposals are useful, but the current automatic expansion and generalization need more diagnosis.
-- Simple cache retrieval is not yet good enough. It often retrieves the same object category but not the same local contact position, so the tactile image may not match the query contact.
+- The V4 development pool has 4,471 samples: 3,634 train and 837 validation samples across 705 records.
+- C2 predicts the future contact box at `probe` values 5, 10, 20, 30, 50, 75, and 100 frames before contact. Four observation frames are input context, not the prediction horizon.
+- V4 validation C2 Top-1 Box48 is 96.77%; Top-10 Box48 coverage is 99.64%. For far `probe75/100`, Top-1 is 90.22% and Top-10 coverage is 98.67%.
+- Learned Top-K contact rerankers are currently diagnostic only. Their validation gates did not safely improve C2, so deployed contact-box selection remains frozen C2 Top-1 with Top-K retained for uncertainty analysis.
+- Split-0 `rec_00950` through `rec_00999` are the sealed final holdout. Do not read their model predictions, inspect their outcomes, or use them for thresholds until the full development recipe is frozen.
 
-Phase 2.5: dataset expansion and diagnosis. This is the next operational stage.
+Phase 4: local tactile cache retrieval. Status: cache ranking and cache trust are the main bottlenecks.
 
-- Expand beyond the first 100 records only after adding clearer diagnostics.
-- Add metrics by time-to-contact bucket, for example near/mid/far probes, because long-horizon samples appear harder.
-- Audit automatic labels against manual labels and debug overlays before trusting larger training runs.
-- Scale gradually: 100 records for validation, then about 200 records for the next controlled run, then larger splits if metrics and labels remain stable.
+- Keep the predicted contact box at `48x48`. It provides a specific local visual query while preserving visible localization errors.
+- Oracle analysis shows that better tactile cache entries usually exist inside the geometry-filtered train cache, but current rankers do not reliably place them first.
+- Never use tactile-cache score alone to choose among C2 Top-K contact boxes: unconstrained tactile selection can move to the wrong physical contact region.
+- The useful current cache supervision is soft tactile-embedding listwise ranking. Direct tactile-MAE ranking was rejected because it regressed validation retrieval quality.
+- The predicted-box cache ranker is a candidate, not a frozen deployment replacement: it improves MAE/SSIM over the handcrafted key but has mixed IoU behavior, especially on far samples.
+- Strict 3-fold OOF cache-confidence data now covers all 3,634 development-train queries. It will train the next cache-trust/cache-miss predictor without query-model leakage.
 
-Phase 3A: cache retrieval improvement.
+Next operational step: cache trust and abstention.
 
-- Keep the predicted contact box at `48x48` for now so errors remain visible and the retrieved tactile crop stays specific.
-- Improve cache keys around local contact identity: local crop appearance, predicted box center, sensor direction, time-to-contact, and potentially learned local visual embeddings.
-- Prefer two-stage retrieval: first filter by geometry/motion/contact location, then re-rank by local crop similarity and tactile-related features.
-- Add retrieval metrics that directly measure local mismatch, such as query GT contact point versus retrieved GT contact point distance.
-
-Phase 3B: longer temporal prediction.
-
-- Extend the model input from a short current-frame window to a longer sequence before building complex constraints.
-- Add explicit trajectory features: recent tip/base positions, velocity, direction stability, and time-to-contact.
-- Evaluate whether longer windows improve far time-to-contact samples before changing the model family.
-
-Phase 3C: trajectory-hotspot mutual constraint.
-
-- After longer sequence data is stable, add a trajectory branch and a hotspot/contact branch.
-- Let trajectory features help correct hotspot prediction, and let hotspot features constrain physically plausible trajectory/contact outcomes.
-- Consider Transformer-style temporal attention only after the longer-window baseline shows that temporal information is useful.
-
-Later phases:
-
-- Optimize online latency.
-- Consider FAISS when the cache grows beyond what NumPy brute-force KNN can comfortably handle.
-- Consider stronger visual-tactile alignment, contrastive learning, or generation fallback after retrieval has reliable local-position matching.
+- Train a lightweight cache-trust predictor on strict OOF features: ranker best score, ranker margin, handcrafted-key margin, geometry/motion features, probe, and input quality.
+- Select its accept/cache-miss threshold on validation only. A cache miss must use a fallback policy rather than returning a forced nearest tactile image.
+- Only after the contact model, cache ranker, and trust threshold are fixed may the sealed final holdout be evaluated once.

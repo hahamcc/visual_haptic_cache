@@ -83,6 +83,8 @@ contact_region:
   retrieval_hybrid_csv: outputs/metrics/contact_region_retrieval_hybrid.csv
   retrieval_compare_json: outputs/metrics/contact_region_retrieval_compare.json
   retrieval_compare_csv: outputs/metrics/contact_region_retrieval_compare.csv
+  motion_tracks_csv: data/processed/sensor_tracks.csv
+  motion_window_frames: 15
   debug_dir: outputs/debug/phase2/contact_region
   retrieval_debug_dir: outputs/debug/phase2/retrieval
   retrieval_direct_debug_dir: outputs/debug/phase2/retrieval_direct
@@ -103,6 +105,18 @@ contact_region:
   cache_crop_size: 48
   cache_motion_weight: 1.0
   cache_visual_weight: 1.0
+  ttc_buckets:
+    near:
+      - 5
+      - 10
+      - 20
+      - 25
+    mid:
+      - 30
+      - 50
+    far:
+      - 75
+      - 100
 
 contact_region_expanded:
   samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
@@ -117,6 +131,8 @@ contact_region_expanded:
   retrieval_hybrid_csv: outputs/metrics/contact_region_expanded_retrieval_hybrid.csv
   retrieval_compare_json: outputs/metrics/contact_region_expanded_retrieval_compare.json
   retrieval_compare_csv: outputs/metrics/contact_region_expanded_retrieval_compare.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  motion_window_frames: 15
   debug_dir: outputs/debug/phase26/contact_region_expanded
   retrieval_debug_dir: outputs/debug/phase26/retrieval
   retrieval_direct_debug_dir: outputs/debug/phase26/retrieval_direct
@@ -137,6 +153,18 @@ contact_region_expanded:
   cache_crop_size: 48
   cache_motion_weight: 1.0
   cache_visual_weight: 1.0
+  ttc_buckets:
+    near:
+      - 5
+      - 10
+      - 20
+      - 25
+    mid:
+      - 30
+      - 50
+    far:
+      - 75
+      - 100
 
 dataset_expansion_audit:
   splits: all
@@ -189,6 +217,8 @@ expanded_region_dataset:
     - 10
     - 5
     - 0
+  trajectory_history_frames: 64
+  trajectory_track_stride: 5
   split_train: 0.8
   split_val: 0.1
   contact_box_size: 48
@@ -197,3 +227,1855 @@ expanded_region_dataset:
   max_tip_base_distance: 45.0
   excluded_records:
     - rec_00007
+
+expanded_region_dataset_masked:
+  split: "0"
+  record_start: 0
+  record_limit: 100
+  output_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_masked/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_masked/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_masked/summary_auto.json
+  heatmap_dir: data/processed/expanded_region_dataset_masked/heatmaps
+  debug_dir: outputs/debug/phase32/expanded_region_dataset_masked
+  debug_samples: 24
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.1
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_250:
+  split: "0"
+  record_start: 0
+  record_limit: 250
+  output_csv: data/processed/expanded_region_dataset_phase35_250/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_250/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_250/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_250/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_250/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_250/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_250/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_250/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.1
+  record_split_seed: 20260711
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_250_v2:
+  split: "0"
+  record_start: 0
+  record_limit: 250
+  output_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_250_v2/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_250_v2/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_250_v2/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_250_v2/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_250_v2/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_250_v2/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.1
+  record_split_seed: 20260711
+  final_holdout_count: 25
+  final_holdout_min_record: 100
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_250_dev_b:
+  split: "0"
+  record_start: 250
+  record_limit: 250
+  output_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_250_dev_b/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_250_dev_b/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_b/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_b/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.2
+  final_holdout_count: 0
+  record_split_seed: 20260719
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_250_dev_c:
+  split: "0"
+  record_start: 500
+  record_limit: 250
+  output_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_250_dev_c/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_250_dev_c/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_c/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_c/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.2
+  final_holdout_count: 0
+  record_split_seed: 20260721
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_200_dev_d:
+  split: "0"
+  record_start: 750
+  record_limit: 200
+  purpose_partition_manifest: data/processed/phase35_future_record_partitions.csv
+  expected_purpose_partition: development
+  output_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_200_dev_d/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_200_dev_d/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_200_dev_d/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_200_dev_d/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.2
+  final_holdout_count: 0
+  record_split_seed: 20260723
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+expanded_region_dataset_phase35_250_dev_e:
+  # New development-only batch in raw split 1; split 0 rec_00950-rec_00999 stay sealed.
+  split: "1"
+  record_start: 0
+  record_limit: 250
+  purpose_partition_manifest: data/processed/phase35_future_record_partitions.csv
+  expected_purpose_partition: development
+  output_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/region_samples_auto.csv
+  tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/sensor_tracks_auto.csv
+  contact_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/contact_index_auto.csv
+  skipped_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/skipped_auto.csv
+  summary_json: data/processed/expanded_region_dataset_phase35_250_dev_e/summary_auto.json
+  record_split_manifest: data/processed/expanded_region_dataset_phase35_250_dev_e/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_e/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_250_dev_e/debug
+  debug_samples: 48
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 0.8
+  split_val: 0.2
+  final_holdout_count: 0
+  record_split_seed: 20260729
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: [rec_00007]
+
+contact_region_expanded_oracle_ttc:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  checkpoint_dir: checkpoints/contact_region_expanded_oracle_ttc
+  metrics_json: outputs/metrics/contact_region_expanded_oracle_ttc.json
+  predictions_csv: outputs/metrics/contact_region_expanded_oracle_ttc_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval.csv
+  retrieval_direct_json: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_direct.json
+  retrieval_direct_csv: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_direct.csv
+  retrieval_hybrid_json: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_hybrid.json
+  retrieval_hybrid_csv: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_hybrid.csv
+  retrieval_compare_json: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_compare.json
+  retrieval_compare_csv: outputs/metrics/contact_region_expanded_oracle_ttc_retrieval_compare.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  motion_window_frames: 15
+  debug_dir: outputs/debug/phase27/contact_region_expanded_oracle_ttc
+  retrieval_debug_dir: outputs/debug/phase27/retrieval
+  retrieval_direct_debug_dir: outputs/debug/phase27/retrieval_direct
+  retrieval_hybrid_debug_dir: outputs/debug/phase27/retrieval_hybrid
+  debug_samples: 30
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  cache_motion_weight: 1.0
+  cache_visual_weight: 1.0
+  use_ttc_channel: true
+  ttc_normalizer: 100.0
+  ttc_buckets:
+    near:
+      - 5
+      - 10
+      - 20
+      - 25
+    mid:
+      - 30
+      - 50
+    far:
+      - 75
+      - 100
+
+contact_region_expanded_motion:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  checkpoint_dir: checkpoints/contact_region_expanded_motion
+  metrics_json: outputs/metrics/contact_region_expanded_motion.json
+  predictions_csv: outputs/metrics/contact_region_expanded_motion_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_expanded_motion_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_expanded_motion_retrieval.csv
+  retrieval_direct_json: outputs/metrics/contact_region_expanded_motion_retrieval_direct.json
+  retrieval_direct_csv: outputs/metrics/contact_region_expanded_motion_retrieval_direct.csv
+  retrieval_hybrid_json: outputs/metrics/contact_region_expanded_motion_retrieval_hybrid.json
+  retrieval_hybrid_csv: outputs/metrics/contact_region_expanded_motion_retrieval_hybrid.csv
+  retrieval_compare_json: outputs/metrics/contact_region_expanded_motion_retrieval_compare.json
+  retrieval_compare_csv: outputs/metrics/contact_region_expanded_motion_retrieval_compare.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  motion_window_frames: 15
+  debug_dir: outputs/debug/phase28/contact_region_expanded_motion
+  retrieval_debug_dir: outputs/debug/phase28/retrieval
+  retrieval_direct_debug_dir: outputs/debug/phase28/retrieval_direct
+  retrieval_hybrid_debug_dir: outputs/debug/phase28/retrieval_hybrid
+  debug_samples: 30
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  cache_motion_weight: 1.0
+  cache_visual_weight: 1.0
+  use_motion_channels: true
+  ttc_buckets:
+    near:
+      - 5
+      - 10
+      - 20
+      - 25
+    mid:
+      - 30
+      - 50
+    far:
+      - 75
+      - 100
+
+ttc_estimator:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  checkpoint_dir: checkpoints/ttc_estimator
+  metrics_json: outputs/metrics/ttc_estimator.json
+  predictions_csv: outputs/metrics/ttc_estimator_predictions.csv
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  hidden_size: 64
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  displacement_loss_weight: 0.25
+  seed: 42
+  ttc_values:
+    - 5
+    - 10
+    - 20
+    - 30
+    - 50
+    - 75
+    - 100
+
+ttc_estimator_masked_8:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  checkpoint_dir: checkpoints/ttc_estimator_masked_8
+  metrics_json: outputs/metrics/ttc_estimator_masked_8.json
+  predictions_csv: outputs/metrics/ttc_estimator_masked_8_predictions.csv
+  trajectory_format: masked
+  history_frames: 8
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  hidden_size: 64
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  displacement_loss_weight: 0.0
+  selection_metric: ttc_mae_frames
+  seed: 42
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+
+ttc_estimator_masked_16:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  checkpoint_dir: checkpoints/ttc_estimator_masked_16
+  metrics_json: outputs/metrics/ttc_estimator_masked_16.json
+  predictions_csv: outputs/metrics/ttc_estimator_masked_16_predictions.csv
+  trajectory_format: masked
+  history_frames: 16
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  hidden_size: 64
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  displacement_loss_weight: 0.0
+  selection_metric: ttc_mae_frames
+  seed: 42
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+
+ttc_estimator_masked_32:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  checkpoint_dir: checkpoints/ttc_estimator_masked_32
+  metrics_json: outputs/metrics/ttc_estimator_masked_32.json
+  predictions_csv: outputs/metrics/ttc_estimator_masked_32_predictions.csv
+  trajectory_format: masked
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  hidden_size: 64
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  displacement_loss_weight: 0.0
+  selection_metric: ttc_mae_frames
+  seed: 42
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+
+contact_region_expanded_predicted_ttc:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator/best.pt
+  checkpoint_dir: checkpoints/contact_region_expanded_predicted_ttc
+  metrics_json: outputs/metrics/contact_region_expanded_predicted_ttc.json
+  predictions_csv: outputs/metrics/contact_region_expanded_predicted_ttc_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_expanded_predicted_ttc_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_expanded_predicted_ttc_retrieval.csv
+  debug_dir: outputs/debug/phase29/contact_region_expanded_predicted_ttc
+  retrieval_debug_dir: outputs/debug/phase29/retrieval
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 30
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 32
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+contact_region_masked_16:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: checkpoints/contact_region_masked_16
+  metrics_json: outputs/metrics/contact_region_masked_16.json
+  predictions_csv: outputs/metrics/contact_region_masked_16_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_masked_16_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_masked_16_retrieval.csv
+  debug_dir: outputs/debug/phase33/contact_region_masked_16
+  retrieval_debug_dir: outputs/debug/phase33/retrieval
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 30
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+contact_region_expanded_temporal:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator/best.pt
+  checkpoint_dir: checkpoints/contact_region_expanded_temporal
+  metrics_json: outputs/metrics/contact_region_expanded_temporal.json
+  predictions_csv: outputs/metrics/contact_region_expanded_temporal_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_expanded_temporal_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_expanded_temporal_retrieval.csv
+  debug_dir: outputs/debug/phase30/contact_region_expanded_temporal
+  retrieval_debug_dir: outputs/debug/phase30/retrieval
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 5
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 30
+  motion_window_frames: 15
+  temporal_fusion: trajectory
+  freeze_ttc_estimator: false
+  trajectory_history_frames: 32
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_loss_weight: 0.01
+  displacement_loss_weight: 0.05
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_reranking:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  predictions_csv: outputs/metrics/contact_region_expanded_predictions.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator/best.pt
+  output_csv: outputs/metrics/contact_proposals_reranked.csv
+  metrics_json: outputs/metrics/contact_proposals_reranked.json
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  hidden_size: 64
+  cache_crop_size: 48
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_weight: 0.8
+  lateral_weight: 0.5
+  cache_similarity_weight: 0.4
+  ttc_normalizer: 100.0
+  lateral_normalizer_px: 48.0
+  cache_miss_similarity: 0.15
+  cache_miss_ttc_frames: 60.0
+  oracle_far_median_error_px: 16.97
+
+failure_record_audit:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  contact_index_csv: data/processed/expanded_region_dataset/contact_index_auto.csv
+  ttc_predictions_csv: outputs/metrics/ttc_estimator_predictions.csv
+  prediction_files:
+    A: outputs/metrics/contact_region_expanded_predictions.csv
+    B: outputs/metrics/contact_region_expanded_oracle_ttc_predictions.csv
+    C: outputs/metrics/contact_region_expanded_predicted_ttc_predictions.csv
+  records: [rec_00092, rec_00096, rec_00098]
+  probes: [75, 100]
+  output_csv: outputs/metrics/failure_record_audit.csv
+  metrics_json: outputs/metrics/failure_record_audit.json
+  debug_dir: outputs/debug/phase31/failure_records
+
+ttc_strategy_evaluation:
+  samples_csv: data/processed/expanded_region_dataset/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset/sensor_tracks_auto.csv
+  ttc_predictions_csv: outputs/metrics/ttc_estimator_predictions.csv
+  baseline_predictions_csv: outputs/metrics/contact_region_expanded_predictions.csv
+  predicted_ttc_predictions_csv: outputs/metrics/contact_region_expanded_predicted_ttc_predictions.csv
+  output_csv: outputs/metrics/ttc_strategy_predictions.csv
+  metrics_json: outputs/metrics/ttc_strategy_evaluation.json
+  cache_crop_size: 48
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_kernel_sigma: 12.5
+  calibration_temperatures: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0]
+  gate_thresholds: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  rerank_ttc_weights: [0.0, 0.05, 0.1, 0.2, 0.4]
+  rerank_lateral_weights: [0.0, 0.05, 0.1, 0.2]
+  rerank_visual_weights: [0.0, 0.05, 0.1, 0.2]
+  max_box48_regression: 0.0
+  max_near_mid_pck48_regression: 0.02
+
+proposal_recall:
+  model_sections:
+    A: contact_region_expanded
+    B: contact_region_expanded_oracle_ttc
+    C: contact_region_expanded_predicted_ttc
+  output_csv: outputs/metrics/proposal_recall.csv
+  metrics_json: outputs/metrics/proposal_recall.json
+  batch_size: 16
+  suppression_radius: 6
+
+proposal_recall_masked_16:
+  model_sections:
+    A: contact_region_expanded
+    B: contact_region_expanded_oracle_ttc
+    C2: contact_region_masked_16
+  output_csv: outputs/metrics/proposal_recall_masked_16.csv
+  metrics_json: outputs/metrics/proposal_recall_masked_16.json
+  batch_size: 16
+  suppression_radius: 6
+
+failure_record_audit_masked_16:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_masked/sensor_tracks_auto.csv
+  contact_index_csv: data/processed/expanded_region_dataset_masked/contact_index_auto.csv
+  ttc_predictions_csv: outputs/metrics/ttc_estimator_masked_16_predictions.csv
+  prediction_files:
+    A: outputs/metrics/contact_region_expanded_predictions.csv
+    B: outputs/metrics/contact_region_expanded_oracle_ttc_predictions.csv
+    C: outputs/metrics/contact_region_masked_16_predictions.csv
+  records: [rec_00092, rec_00096, rec_00098]
+  probes: [75, 100]
+  output_csv: outputs/metrics/failure_record_audit_masked_16.csv
+  metrics_json: outputs/metrics/failure_record_audit_masked_16.json
+  debug_dir: outputs/debug/phase33/failure_records_masked_16
+
+dual_gate_masked_16:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  baseline_predictions_csv: outputs/metrics/contact_region_expanded_predictions.csv
+  predicted_ttc_predictions_csv: outputs/metrics/contact_region_masked_16_predictions.csv
+  ttc_predictions_csv: outputs/metrics/ttc_estimator_masked_16_predictions.csv
+  output_csv: outputs/metrics/dual_gate_masked_16_predictions.csv
+  metrics_json: outputs/metrics/dual_gate_masked_16.json
+  calibration_temperatures: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0]
+  confidence_thresholds: [0.0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+  min_real_points: 16
+  min_history_span: 15
+  max_padding_ratio: 0.0
+  minimum_val_box48: 0.8
+
+proposal_ranker_masked_16:
+  contact_model_section: contact_region_masked_16
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_masked_16/predictions.csv
+  checkpoint_dir: checkpoints/proposal_ranker_masked_16
+  output_csv: outputs/metrics/proposal_ranker_masked_16_predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_masked_16.json
+  debug_dir: outputs/debug/phase34/proposal_ranker_masked_16
+  topk: 10
+  cache_crop_size: 48
+  include_heatmap_features: true
+  suppression_radius: 6
+  extraction_batch_size: 16
+  batch_size: 64
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  debug_samples: 20
+  seed: 42
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+
+proposal_ranker_oof_masked_16:
+  contact_model_section: contact_region_masked_16
+  work_dir: outputs/cache/proposal_ranker_oof_masked_16
+  output_csv: outputs/cache/proposal_ranker_oof_masked_16/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_masked_16.json
+  folds: 3
+  topk: 10
+  epochs: 120
+  seed: 42
+
+oracle_box_tactile_retrieval:
+  samples_csv: data/processed/expanded_region_dataset_masked/region_samples_auto.csv
+  cache_split: train
+  query_splits: [val]
+  output_csv: outputs/metrics/oracle_box_tactile_retrieval.csv
+  metrics_json: outputs/metrics/oracle_box_tactile_retrieval.json
+  debug_dir: outputs/debug/phase35/oracle_box_tactile_retrieval
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  filter_k: 32
+  geometry_weight: 1.0
+  visual_weight: 1.0
+  cache_miss_quantile: 0.95
+  debug_samples: 20
+  seed: 20260711
+
+contact_region_phase35_mining:
+  samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+  checkpoint_dir: checkpoints/contact_region_masked_16
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+
+phase35_hard_case_mining:
+  contact_model_section: contact_region_phase35_mining
+  output_csv: outputs/metrics/phase35_hard_case_mining.csv
+  metrics_json: outputs/metrics/phase35_hard_case_mining.json
+  topk: 10
+  suppression_radius: 6
+  batch_size: 16
+
+contact_region_phase35_oof:
+  samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_oof/placeholder_checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_oof_placeholder.json
+  predictions_csv: outputs/metrics/contact_region_phase35_oof_placeholder_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_phase35_oof_placeholder_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_phase35_oof_placeholder_retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_oof/placeholder_debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_oof/placeholder_retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 0
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_ranker_oof_phase35:
+  contact_model_section: contact_region_phase35_oof
+  work_dir: /mnt/data/cheng/haptic-cache/phase35_oof/folds
+  output_csv: outputs/cache/proposal_ranker_oof_phase35/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_phase35.json
+  cases_csv: outputs/metrics/proposal_ranker_oof_phase35_cases.csv
+  fold_membership_csv: outputs/metrics/proposal_ranker_oof_phase35_fold_membership.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_oof/debug
+  debug_samples: 12
+  folds: 3
+  topk: 10
+  epochs: 120
+  seed: 20260718
+
+phase35_development_pool:
+  allowed_splits: [train, val]
+  sources:
+    - name: phase35_250_v2
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+    - name: phase35_250_dev_b
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/sensor_tracks_auto.csv
+  output_csv: data/processed/phase35_development_pool/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_development_pool/sensor_tracks_auto.csv
+  record_manifest_csv: data/processed/phase35_development_pool/record_sources.csv
+  summary_json: data/processed/phase35_development_pool/summary.json
+
+phase35_development_pool_v2:
+  allowed_splits: [train, val]
+  min_trajectory_real_points: 16
+  sources:
+    - name: phase35_250_v2
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+    - name: phase35_250_dev_b
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/sensor_tracks_auto.csv
+    - name: phase35_250_dev_c
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/sensor_tracks_auto.csv
+  output_csv: data/processed/phase35_development_pool_v2/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_development_pool_v2/sensor_tracks_auto.csv
+  record_manifest_csv: data/processed/phase35_development_pool_v2/record_sources.csv
+  summary_json: data/processed/phase35_development_pool_v2/summary.json
+
+phase35_development_pool_v3:
+  allowed_splits: [train, val]
+  min_trajectory_real_points: 16
+  sources:
+    - name: phase35_250_v2
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+    - name: phase35_250_dev_b
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/sensor_tracks_auto.csv
+    - name: phase35_250_dev_c
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/sensor_tracks_auto.csv
+    - name: phase35_200_dev_d
+      samples_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/sensor_tracks_auto.csv
+  output_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_development_pool_v3/sensor_tracks_auto.csv
+  record_manifest_csv: data/processed/phase35_development_pool_v3/record_sources.csv
+  summary_json: data/processed/phase35_development_pool_v3/summary.json
+
+phase35_development_pool_v4:
+  # V4 adds split-1 development batch E; only rows with real 16-frame history enter.
+  allowed_splits: [train, val]
+  min_trajectory_real_points: 16
+  sources:
+    - name: phase35_250_v2
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_v2/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_v2/sensor_tracks_auto.csv
+    - name: phase35_250_dev_b
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_b/sensor_tracks_auto.csv
+    - name: phase35_250_dev_c
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_c/sensor_tracks_auto.csv
+    - name: phase35_200_dev_d
+      samples_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/sensor_tracks_auto.csv
+    - name: phase35_250_dev_e
+      samples_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/region_samples_auto.csv
+      tracks_csv: data/processed/expanded_region_dataset_phase35_250_dev_e/sensor_tracks_auto.csv
+  output_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  record_manifest_csv: data/processed/phase35_development_pool_v4/record_sources.csv
+  summary_json: data/processed/phase35_development_pool_v4/summary.json
+
+contact_region_phase35_combined_oof:
+  samples_csv: data/processed/phase35_development_pool/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof/placeholder_checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_combined_oof_placeholder.json
+  predictions_csv: outputs/metrics/contact_region_phase35_combined_oof_placeholder_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_phase35_combined_oof_placeholder_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_phase35_combined_oof_placeholder_retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof/placeholder_debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof/placeholder_retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 0
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_ranker_oof_phase35_combined:
+  contact_model_section: contact_region_phase35_combined_oof
+  work_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof/folds
+  output_csv: outputs/cache/proposal_ranker_oof_phase35_combined/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_phase35_combined.json
+  cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_cases.csv
+  fold_membership_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_fold_membership.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof/debug
+  debug_samples: 12
+  folds: 3
+  topk: 10
+  epochs: 120
+  seed: 20260720
+
+contact_region_phase35_combined_oof_v2:
+  samples_csv: data/processed/phase35_development_pool_v2/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v2/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v2/placeholder_checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_combined_oof_v2_placeholder.json
+  predictions_csv: outputs/metrics/contact_region_phase35_combined_oof_v2_placeholder_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_phase35_combined_oof_v2_placeholder_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_phase35_combined_oof_v2_placeholder_retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v2/placeholder_debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v2/placeholder_retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 0
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_ranker_oof_phase35_combined_v2:
+  contact_model_section: contact_region_phase35_combined_oof_v2
+  work_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v2/folds
+  output_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_phase35_combined_v2.json
+  cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v2_cases.csv
+  fold_membership_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v2_fold_membership.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v2/debug
+  debug_samples: 12
+  folds: 3
+  topk: 10
+  epochs: 120
+  seed: 20260722
+
+contact_region_phase35_combined_oof_v3:
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v3/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v3/placeholder_checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_combined_oof_v3_placeholder.json
+  predictions_csv: outputs/metrics/contact_region_phase35_combined_oof_v3_placeholder_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_phase35_combined_oof_v3_placeholder_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_phase35_combined_oof_v3_placeholder_retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v3/placeholder_debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v3/placeholder_retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 42
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 0
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_ranker_oof_phase35_combined_v3:
+  contact_model_section: contact_region_phase35_combined_oof_v3
+  work_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v3/folds
+  output_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_phase35_combined_v3.json
+  cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v3_cases.csv
+  fold_membership_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v3_fold_membership.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v3/debug
+  debug_samples: 16
+  folds: 3
+  topk: 10
+  epochs: 120
+  seed: 20260723
+
+contact_region_phase35_combined_oof_v4:
+  # Frozen C2 recipe on the expanded V4 development pool; no final-holdout rows exist here.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v4/placeholder_checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_combined_oof_v4_placeholder.json
+  predictions_csv: outputs/metrics/contact_region_phase35_combined_oof_v4_placeholder_predictions.csv
+  retrieval_json: outputs/metrics/contact_region_phase35_combined_oof_v4_placeholder_retrieval.json
+  retrieval_csv: outputs/metrics/contact_region_phase35_combined_oof_v4_placeholder_retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v4/placeholder_debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v4/placeholder_retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 32
+  epochs: 80
+  early_stopping_patience: 12
+  early_stopping_min_delta: 0.000001
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  amp: true
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 20260729
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 0
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+proposal_ranker_oof_phase35_combined_v4:
+  contact_model_section: contact_region_phase35_combined_oof_v4
+  work_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v4/folds
+  output_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  metrics_json: outputs/metrics/proposal_ranker_oof_phase35_combined_v4.json
+  cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v4_cases.csv
+  fold_membership_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v4_fold_membership.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_combined_oof_v4/debug
+  debug_samples: 20
+  folds: 3
+  topk: 10
+  epochs: 80
+  seed: 20260729
+
+contact_region_phase35_ranker_validation:
+  samples_csv: data/processed/phase35_development_pool_v2/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v2/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_ranker_validation.json
+  predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  retrieval_json: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/retrieval.json
+  retrieval_csv: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 16
+  epochs: 120
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 20260722
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 12
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+contact_region_phase35_mining_dev_d:
+  samples_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/region_samples_auto.csv
+  motion_tracks_csv: data/processed/expanded_region_dataset_phase35_200_dev_d/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation/checkpoints
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+
+contact_region_phase35_ranker_validation_v3:
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v3/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v3/checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_ranker_validation_v3.json
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  retrieval_json: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v3/retrieval.json
+  retrieval_csv: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v3/retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v3/debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v3/retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 32
+  epochs: 80
+  early_stopping_patience: 12
+  early_stopping_min_delta: 0.000001
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  amp: true
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 20260723
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 16
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+contact_region_phase35_ranker_validation_v4:
+  # Single frozen-C2 refit for validation candidates; V4 contains no final-holdout rows.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  ttc_checkpoint: checkpoints/ttc_estimator_masked_16/best.pt
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/checkpoints
+  metrics_json: outputs/metrics/contact_region_phase35_ranker_validation_v4.json
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  retrieval_json: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/retrieval.json
+  retrieval_csv: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/retrieval.csv
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/debug
+  retrieval_debug_dir: /mnt/data/cheng/haptic-cache/phase35_ranker_validation_v4/retrieval_debug
+  input_width: 192
+  input_height: 128
+  geometry_sigma: 2.5
+  batch_size: 32
+  epochs: 80
+  early_stopping_patience: 12
+  early_stopping_min_delta: 0.000001
+  num_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+  amp: true
+  learning_rate: 0.001
+  weight_decay: 0.00001
+  seed: 20260729
+  topk: 10
+  topk_suppression_radius: 6
+  bbox_half_size: 48
+  contact_box_size: 48
+  cache_crop_size: 48
+  debug_samples: 20
+  motion_window_frames: 15
+  temporal_fusion: predicted_ttc
+  trajectory_format: masked
+  freeze_ttc_estimator: true
+  trajectory_history_frames: 16
+  trajectory_hidden_size: 64
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  displacement_scale_px: 48.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_buckets:
+    near: [5, 10, 20]
+    mid: [30, 50]
+    far: [75, 100]
+
+phase35_hard_case_mining_dev_d:
+  contact_model_section: contact_region_phase35_mining_dev_d
+  output_csv: outputs/metrics/phase35_hard_case_mining_dev_d.csv
+  metrics_json: outputs/metrics/phase35_hard_case_mining_dev_d.json
+  topk: 10
+  suppression_radius: 6
+  batch_size: 16
+
+proposal_ranker_supervision_phase35:
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  train_oof_cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v2_cases.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  train_output_csv: outputs/cache/proposal_ranker_phase35_supervision/train_supervision.csv
+  validation_output_csv: outputs/cache/proposal_ranker_phase35_supervision/validation_candidates.csv
+  metrics_json: outputs/metrics/proposal_ranker_phase35_supervision.json
+  topk: 10
+  hard_query_weight: 4.0
+  far_hard_multiplier: 1.5
+
+proposal_ranker_supervision_phase35_v3:
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  train_oof_cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v3_cases.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  train_output_csv: outputs/cache/proposal_ranker_phase35_v3_supervision/train_supervision.csv
+  validation_output_csv: outputs/cache/proposal_ranker_phase35_v3_supervision/validation_candidates.csv
+  metrics_json: outputs/metrics/proposal_ranker_phase35_v3_supervision.json
+  topk: 10
+  hard_query_weight: 4.0
+  far_hard_multiplier: 1.5
+
+proposal_ranker_supervision_phase35_v4:
+  # Train supervision is generated only from strict V4 OOF train proposals.
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  train_oof_cases_csv: outputs/metrics/proposal_ranker_oof_phase35_combined_v4_cases.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  train_output_csv: outputs/cache/proposal_ranker_phase35_v4_supervision/train_supervision.csv
+  validation_output_csv: outputs/cache/proposal_ranker_phase35_v4_supervision/validation_candidates.csv
+  metrics_json: outputs/metrics/proposal_ranker_phase35_v4_supervision.json
+  topk: 10
+  hard_query_weight: 4.0
+  far_hard_multiplier: 1.5
+
+proposal_ranker_pairwise_phase35:
+  contact_model_section: contact_region_phase35_ranker_validation
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/debug
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 50
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 20
+  seed: 20260722
+
+proposal_ranker_pairwise_phase35_h:
+  contact_model_section: contact_region_phase35_ranker_validation
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_h/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_h_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_h_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_h_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_h_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_h_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_h/debug
+  feature_mode: heatmap
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 50
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 12
+  seed: 20260722
+
+proposal_ranker_pairwise_phase35_hg:
+  contact_model_section: contact_region_phase35_ranker_validation
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_hg/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hg_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_hg_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hg_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hg_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_hg_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_hg/debug
+  feature_mode: heatmap_geometry
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 50
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 12
+  seed: 20260722
+
+proposal_ranker_pairwise_phase35_hgv:
+  contact_model_section: contact_region_phase35_ranker_validation
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v2/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_hgv/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hgv_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_hgv_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hgv_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_hgv_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_hgv_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker/ablation_hgv/debug
+  feature_mode: all
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 50
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 12
+  seed: 20260722
+
+proposal_ranker_pairwise_phase35_v3_hg:
+  contact_model_section: contact_region_phase35_ranker_validation_v3
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_hg/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_hg/debug
+  feature_mode: heatmap_geometry
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 100
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 20
+  seed: 20260723
+
+proposal_ranker_pairwise_phase35_v4_hg:
+  # V4: OOF-only training; fixed V4 validation selects a conservative rerank gate.
+  contact_model_section: contact_region_phase35_ranker_validation_v4
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v4_hg/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v4_hg_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v4_hg_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v4_hg_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v4_hg_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v4_hg_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v4_hg/debug
+  feature_mode: heatmap_geometry
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 100
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 20
+  seed: 20260729
+
+proposal_ranker_pairwise_phase35_v3_hg_context:
+  contact_model_section: contact_region_phase35_ranker_validation_v3
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_hg_context/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_context_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_context_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_context_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_context_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_hg_context_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_hg_context/debug
+  feature_mode: heatmap_geometry_context
+  contextual_candidate_features: true
+  topk: 10
+  cache_crop_size: 48
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 200
+  patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 100
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 20
+  seed: 20260723
+
+proposal_ranker_pairwise_phase35_v3_linear_hg:
+  contact_model_section: contact_region_phase35_ranker_validation_v3
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_linear_hg/checkpoints
+  output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_linear_hg_validation.csv
+  metrics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_linear_hg_validation.json
+  raw_output_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_linear_hg_raw_scores.csv
+  diagnostic_cases_csv: outputs/metrics/proposal_ranker_pairwise_phase35_v3_linear_hg_diagnostic_cases.csv
+  diagnostics_json: outputs/metrics/proposal_ranker_pairwise_phase35_v3_linear_hg_diagnostics.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_pairwise_ranker_v3_linear_hg/debug
+  ranker_architecture: linear
+  feature_mode: heatmap_geometry
+  topk: 10
+  cache_crop_size: 48
+  epochs: 200
+  patience: 40
+  learning_rate: 0.005
+  weight_decay: 0.001
+  pairwise_margin: 0.25
+  auxiliary_loss_weight: 0.25
+  stability_margin: 0.10
+  stability_loss_weight: 1.0
+  minimum_hard_queries: 100
+  rerank_margins: [0.0, 0.1, 0.25, 0.5, 1.0, 2.0, 4.0]
+  debug_samples: 20
+  seed: 20260723
+
+phase35_future_record_partitions:
+  # Explicit non-overlapping development ranges; final holdout remains sealed in split 0.
+  development_sources:
+    - split: "0"
+      ranges:
+        - start: 750
+          limit: 200
+    - split: "1"
+      ranges:
+        - start: 1000
+          limit: 250
+  final_holdout_split: "0"
+  final_holdout_start: 950
+  final_holdout_limit: 50
+  output_csv: data/processed/phase35_future_record_partitions.csv
+  summary_json: data/processed/phase35_future_record_partitions.json
+
+topk_tactile_cache_retrieval_phase35_v3:
+  # Development validation only. The evaluator rejects rec_00950+ at runtime.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  cache_split: train
+  query_split: val
+  output_csv: outputs/metrics/topk_tactile_cache_retrieval_phase35_v3.csv
+  candidates_csv: outputs/metrics/topk_tactile_cache_retrieval_phase35_v3_candidates.csv
+  metrics_json: outputs/metrics/topk_tactile_cache_retrieval_phase35_v3.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_topk_tactile_cache_retrieval/debug
+  topk: 10
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  geometry_weight: 1.0
+  visual_weight: 1.0
+  heatmap_weight: 0.25
+  cache_miss_quantile: 0.95
+  miss_calibration_samples: 256
+  final_holdout_min_record: 950
+  debug_samples: 20
+  seed: 20260724
+
+oracle_tactile_cache_retrieval_phase35_v3:
+  # Same retrieval key as the predicted-box experiment, but with the GT 48x48 box.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  candidate_source: target
+  cache_split: train
+  query_split: val
+  output_csv: outputs/metrics/oracle_tactile_cache_retrieval_phase35_v3.csv
+  candidates_csv: outputs/metrics/oracle_tactile_cache_retrieval_phase35_v3_candidates.csv
+  metrics_json: outputs/metrics/oracle_tactile_cache_retrieval_phase35_v3.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase35_oracle_tactile_cache_retrieval/debug
+  topk: 1
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  geometry_weight: 1.0
+  visual_weight: 1.0
+  heatmap_weight: 0.0
+  cache_miss_quantile: 0.95
+  miss_calibration_samples: 256
+  final_holdout_min_record: 950
+  debug_samples: 20
+  seed: 20260724
+
+tactile_cache_alignment_phase35_v3:
+  # Oracle contact boxes isolate cache-key quality from contact-region prediction.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  cache_split: train
+  query_split: val
+  candidates_csv: outputs/metrics/tactile_cache_alignment_phase35_v3_candidates.csv
+  queries_csv: outputs/metrics/tactile_cache_alignment_phase35_v3_queries.csv
+  metrics_json: outputs/metrics/tactile_cache_alignment_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  geometry_weight: 1.0
+  visual_weight: 1.0
+  final_holdout_min_record: 950
+
+tactile_cache_matcher_phase35_v3:
+  # Train on train-record query/cache pairs; validate only against the fixed V3 validation records.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_tactile_cache_matcher/checkpoints
+  query_output_csv: outputs/metrics/tactile_cache_matcher_phase35_v3_queries.csv
+  metrics_json: outputs/metrics/tactile_cache_matcher_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  geometry_weight: 1.0
+  visual_weight: 1.0
+  hidden_size: 128
+  dropout: 0.1
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  target_temperature: 0.02
+  listwise_weight: 0.5
+  final_holdout_min_record: 950
+  seed: 20260725
+
+crossmodal_tactile_cache_phase35_v3:
+  # Cross-modal contrastive learning: local RGB + geometry -> tactile cache embedding.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_crossmodal_tactile_cache/checkpoints
+  query_output_csv: outputs/metrics/crossmodal_tactile_cache_phase35_v3_queries.csv
+  metrics_json: outputs/metrics/crossmodal_tactile_cache_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  latent_dim: 64
+  batch_size: 64
+  epochs: 100
+  validation_interval: 2
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  temperature: 0.07
+  final_holdout_min_record: 950
+  seed: 20260726
+
+soft_tactile_cache_ranker_phase35_v3:
+  # Candidate-aware soft ranking: query crop + cache crop + geometry -> tactile similarity score.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints
+  query_output_csv: outputs/metrics/soft_tactile_cache_ranker_phase35_v3_queries.csv
+  metrics_json: outputs/metrics/soft_tactile_cache_ranker_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 60
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  final_holdout_min_record: 950
+  seed: 20260727
+
+soft_tactile_cache_gate_phase35_v3:
+  # Validation-only gate selection; final holdout remains sealed.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints/best.pt
+  output_csv: outputs/metrics/soft_tactile_cache_gate_phase35_v3_queries.csv
+  grid_csv: outputs/metrics/soft_tactile_cache_gate_phase35_v3_grid.csv
+  metrics_json: outputs/metrics/soft_tactile_cache_gate_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+  gate_quantiles: [0.0, 0.25, 0.5, 0.75, 0.9]
+  minimum_gate_coverage: 0.05
+  final_holdout_min_record: 950
+
+soft_tactile_cache_predicted_transfer_phase35_v3:
+  # Frozen soft ranker evaluated with C2 Top-1 predicted contact boxes only.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints/best.pt
+  output_csv: outputs/metrics/soft_tactile_cache_predicted_transfer_phase35_v3_queries.csv
+  metrics_json: outputs/metrics/soft_tactile_cache_predicted_transfer_phase35_v3.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+  final_holdout_min_record: 950
+
+topk_soft_tactile_cache_phase35_v3:
+  # Each C2 Top-10 proposal is scored by frozen soft cache retrieval and heatmap confidence.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v3_validation/predictions.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints/best.pt
+  output_csv: outputs/metrics/topk_soft_tactile_cache_phase35_v3_queries.csv
+  candidates_csv: outputs/metrics/topk_soft_tactile_cache_phase35_v3_candidates.csv
+  grid_csv: outputs/metrics/topk_soft_tactile_cache_phase35_v3_grid.csv
+  metrics_json: outputs/metrics/topk_soft_tactile_cache_phase35_v3.json
+  topk: 10
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+  heatmap_weights: [0.0, 0.05, 0.1, 0.25, 0.5, 1.0]
+  final_holdout_min_record: 950
+
+oof_topk_cache_calibration_phase35_v3:
+  # OOF C2 proposals provide train-only supervision for a future cross-candidate calibrator.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v3/predictions.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints/best.pt
+  output_csv: outputs/cache/oof_topk_cache_calibration_phase35_v3.csv
+  metrics_json: outputs/metrics/oof_topk_cache_calibration_phase35_v3.json
+  topk: 10
+  cache_crop_size: 48
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+  final_holdout_min_record: 950
+
+topk_candidate_calibrator_phase35_v3:
+  # OOF train candidates + validation candidates from frozen C2/cache models.
+  samples_csv: data/processed/phase35_development_pool_v3/region_samples_auto.csv
+  train_csv: outputs/cache/oof_topk_cache_calibration_phase35_v3.csv
+  validation_csv: outputs/metrics/topk_soft_tactile_cache_phase35_v3_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_topk_candidate_calibrator/checkpoints
+  score_output_csv: outputs/metrics/topk_candidate_calibrator_phase35_v3_scores.csv
+  query_output_csv: outputs/metrics/topk_candidate_calibrator_phase35_v3_queries.csv
+  grid_output_csv: outputs/metrics/topk_candidate_calibrator_phase35_v3_grid.csv
+  metrics_json: outputs/metrics/topk_candidate_calibrator_phase35_v3.json
+  batch_size: 64
+  epochs: 200
+  early_stopping_patience: 40
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  hard_weight: 4.0
+  far_hard_multiplier: 1.5
+  easy_weight: 0.25
+  bce_weight: 0.25
+  gate_quantiles: [0.0, 0.25, 0.5, 0.75, 0.9]
+  minimum_rank_hard_corrections: 2
+  maximum_easy_corruptions: 1
+  seed: 20260728
+
+rerank_trigger_phase35_v4:
+  # Query-level high-precision trigger; it does not select a replacement candidate.
+  contact_model_section: contact_region_phase35_ranker_validation_v4
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase35_rerank_trigger_v4/checkpoints
+  output_csv: outputs/metrics/rerank_trigger_phase35_v4_validation.csv
+  grid_csv: outputs/metrics/rerank_trigger_phase35_v4_grid.csv
+  metrics_json: outputs/metrics/rerank_trigger_phase35_v4.json
+  far_only: true
+  hidden_size: 32
+  dropout: 0.1
+  epochs: 160
+  patience: 30
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  positive_weight: 7.0
+  gate_quantiles: [0.50, 0.75, 0.85, 0.90, 0.95, 0.97, 0.99]
+  minimum_precision: 0.50
+  minimum_recall: 0.20
+  minimum_gate_queries: 4
+  seed: 20260730
+
+phase4a_topk_tactile_oracle_v4:
+  # Strict offline diagnostic. It uses only V4 train-cache and validation queries.
+  # True tactile maps are used solely to measure A/B/C/D upper bounds, never for an online choice.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase35_soft_tactile_cache_ranker/checkpoints/best.pt
+  output_csv: outputs/metrics/phase4a_topk_tactile_oracle_v4_queries.csv
+  candidates_csv: outputs/metrics/phase4a_topk_tactile_oracle_v4_candidates.csv
+  metrics_json: outputs/metrics/phase4a_topk_tactile_oracle_v4.json
+  topk: 10
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+
+phase4b_predicted_box_cache_ranker_v4:
+  # Local cache ranking only: C2 chooses the contact box; the cache ranker chooses a train-cache entry.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4b_predicted_box_cache_ranker_v4/checkpoints
+  query_output_csv: outputs/metrics/phase4b_predicted_box_cache_ranker_v4_queries.csv
+  metrics_json: outputs/metrics/phase4b_predicted_box_cache_ranker_v4.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 80
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.002
+  listwise_weight: 1.0
+  seed: 20260731
+
+phase4b_ablation_gt_embedding_v4:
+  # A: isolate the upper bound of the legacy soft tactile-embedding target with exact contact boxes.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4b_ablation_gt_embedding_v4/checkpoints
+  query_output_csv: outputs/metrics/phase4b_ablation_gt_embedding_v4_queries.csv
+  metrics_json: outputs/metrics/phase4b_ablation_gt_embedding_v4.json
+  train_coordinate_source: target
+  validation_coordinate_source: target
+  target_mode: tactile_embedding
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 80
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  seed: 20260801
+
+phase4b_ablation_predicted_embedding_v4:
+  # B: same architecture/target as A, but strict OOF C2 training boxes and predicted validation boxes.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4b_ablation_predicted_embedding_v4/checkpoints
+  query_output_csv: outputs/metrics/phase4b_ablation_predicted_embedding_v4_queries.csv
+  metrics_json: outputs/metrics/phase4b_ablation_predicted_embedding_v4.json
+  train_coordinate_source: predicted
+  validation_coordinate_source: predicted
+  target_mode: tactile_embedding
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 80
+  early_stopping_patience: 12
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  seed: 20260801
+
+phase4c_cache_confidence_audit_v4:
+  # Audit online confidence signals before creating any cache-miss threshold or fallback policy.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase4b_ablation_predicted_embedding_v4/checkpoints/best.pt
+  output_csv: outputs/metrics/phase4c_cache_confidence_audit_v4_queries.csv
+  metrics_json: outputs/metrics/phase4c_cache_confidence_audit_v4.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  dropout: 0.1
+  coverages: [0.1, 0.2, 0.3, 0.5, 0.7, 1.0]
+
+phase4d_oof_cache_confidence_v4:
+  # Train one cache ranker per C2 OOF fold, then score only that held-out fold.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4d_oof_cache_confidence_v4/checkpoints
+  output_csv: outputs/cache/phase4d_oof_cache_confidence_v4.csv
+  metrics_json: outputs/metrics/phase4d_oof_cache_confidence_v4.json
+  cache_crop_size: 48
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  batch_size: 16
+  epochs: 4
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  seed: 20260802
