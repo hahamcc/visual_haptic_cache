@@ -28,13 +28,36 @@ class FrozenDinoV2(nn.Module):
 
     @torch.no_grad()
     def forward(self, images: torch.Tensor) -> torch.Tensor:
+        return self.forward_layers(images, (12,))[12]
+
+    @torch.no_grad()
+    def forward_layers(
+        self,
+        images: torch.Tensor,
+        layers: tuple[int, ...] | list[int],
+    ) -> dict[int, torch.Tensor]:
+        """Return normalized patch tokens from one-based transformer block numbers.
+
+        The public DINOv2 ``get_intermediate_layers`` API accepts zero-based block
+        indices.  Phase4H configs deliberately use the human-readable one-based
+        convention (8, 10, 12), so conversion and validation live here.
+        """
         images = F.interpolate(images, (self.image_size, self.image_size), mode="bicubic", align_corners=False)
         images = (images - self.mean) / self.std
-        features = self.model.forward_features(images)
-        tokens = features.get("x_norm_patchtokens") if isinstance(features, dict) else None
-        if tokens is None:
-            raise RuntimeError("DINOv2 backbone did not return x_norm_patchtokens; expected official ViT-S/14 Hub model.")
-        return tokens
+        requested = tuple(sorted(dict.fromkeys(int(layer) for layer in layers)))
+        block_count = len(self.model.blocks)
+        if not requested or any(layer < 1 or layer > block_count for layer in requested):
+            raise ValueError(f"DINO layers must be within 1..{block_count}, got {requested}")
+        outputs = self.model.get_intermediate_layers(
+            images,
+            n=[layer - 1 for layer in requested],
+            reshape=False,
+            return_class_token=False,
+            norm=True,
+        )
+        if len(outputs) != len(requested):
+            raise RuntimeError(f"DINOv2 returned {len(outputs)} layers for {requested}")
+        return {layer: tokens for layer, tokens in zip(requested, outputs, strict=True)}
 
 
 def spatial_tokens(tokens: torch.Tensor, width: int = 16) -> torch.Tensor:

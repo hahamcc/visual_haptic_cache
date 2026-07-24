@@ -2444,3 +2444,303 @@ phase4f_v2_final_partition:
           limit: 100
   output_csv: data/processed/phase4f_v2_record_partitions.csv
   summary_json: data/processed/phase4f_v2_record_partitions.json
+
+phase4h_protocol_v1:
+  # Freeze and audit every development-only input before Phase4H work starts.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_query_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  dino_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  geometry_filter_k: 32
+  audit_json: outputs/metrics/phase4h_protocol_audit_v1.json
+
+phase4h_dino_ablation_oof_v1:
+  # Training-free DINO ablations. All variants use the exact frozen V1 Top-32.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/cache/phase4h_dino_ablation_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4h_dino_ablation_oof_v1.json
+  feature_cache_pattern: /mnt/data/cheng/haptic-cache/phase4h_dino_ablation_oof_v1/features/{recipe}.npz
+  token_cache_dir: /mnt/data/cheng/haptic-cache/phase4h_dino_ablation_oof_v1/tokens
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  score_batch_size: 8
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  hard_local_radius: 1
+  soft_local_radius: 2
+  soft_temperature: 0.07
+  position_penalty: 0.25
+  center_sigma: 0.35
+  seed: 20260724
+  recipes:
+    - name: baseline_black_raw_layer12_hard
+      padding_mode: black
+      canonicalization_mode: raw
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_raw_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: raw
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_sensor_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: sensor_axis
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer8_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer8
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer10_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer10
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_soft
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: position_soft
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_soft_wide
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: position_soft
+      scales: [48, 96, 144]
+      scale_weights: [0.4, 0.35, 0.25]
+
+phase4h_dino_frontier_v1:
+  ablation_metrics_json: outputs/metrics/phase4h_dino_ablation_oof_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  baseline_recipe: baseline_black_raw_layer12_hard
+  shape_recipe_mae_slack: 0.0001
+
+phase4h_tactile_index_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  metrics_json: outputs/metrics/phase4h_tactile_index_v1.json
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+
+phase4h_tactile_alignment_oof_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  # Empty by design: convert the frozen C2 OOF predicted_ttc to a soft distribution.
+  # A future OOF TTC probability table may be supplied only if it covers V4 by record.
+  ttc_predictions_csv: ""
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  tactile_index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4h_tactile_alignment_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  batch_size: 32
+  epochs: 50
+  early_stopping_patience: 8
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  dropout: 0.1
+  gradient_clip: 1.0
+  target_temperature: 0.02
+  score_temperature: 0.1
+  listwise_loss_weight: 1.0
+  latent_loss_weight: 0.1
+  hard_negative_loss_weight: 0.5
+  hard_negative_margin: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  seeds: [20260724, 20260725, 20260726]
+
+phase4h_dino_gate_oof_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  aligned_candidate_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_dino_gate_oof_v1_candidates.csv
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  metrics_json: outputs/metrics/phase4h_dino_gate_oof_v1.json
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+  seed: 20260724
+
+phase4h_oof_evaluation_v1:
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  gated_query_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  metrics_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+
+phase4h_validation_features_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  feature_cache_npz: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/query_features.npz
+  token_cache_dir: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/tokens
+  candidate_output_csv: outputs/cache/phase4h_validation_recipe_candidates.csv
+  metrics_json: outputs/metrics/phase4h_validation_features_v1.json
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  score_batch_size: 8
+  hard_local_radius: 1
+  soft_local_radius: 2
+  soft_temperature: 0.07
+  position_penalty: 0.25
+  center_sigma: 0.35
+  seed: 20260724
+
+phase4h_validation_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  # Use frozen validation C2 predicted_ttc; no true probe or separately fitted validation label is read.
+  ttc_predictions_csv: ""
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  validation_feature_cache_npz: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/query_features.npz
+  validation_recipe_candidate_csv: outputs/cache/phase4h_validation_recipe_candidates.csv
+  tactile_index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  alignment_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints
+  gate_checkpoint: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints/full.pt
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  v1_validation_query_csv: outputs/cache/phase4g_v1_validation_queries.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  aligned_query_output_csv: outputs/cache/phase4h_validation_aligned_queries.csv
+  aligned_candidate_output_csv: outputs/cache/phase4h_validation_aligned_candidates.csv
+  gated_query_output_csv: outputs/cache/phase4h_validation_gated_queries.csv
+  gated_candidate_output_csv: outputs/cache/phase4h_validation_gated_candidates.csv
+  metrics_json: outputs/metrics/phase4h_validation_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  batch_size: 32
+  dropout: 0.1
+  gate_dropout: 0.1
+  seeds: [20260724, 20260725, 20260726]
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+
+phase4h_cache_trust_v1:
+  # Guarded post-acceptance step. This never reuses a Phase4E/V1 trust checkpoint.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4h_validation_metrics_json: outputs/metrics/phase4h_validation_v1.json
+  oof_gated_query_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  oof_gated_candidate_csv: outputs/cache/phase4h_dino_gate_oof_v1_candidates.csv
+  oof_aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  validation_gated_query_csv: outputs/cache/phase4h_validation_gated_queries.csv
+  validation_gated_candidate_csv: outputs/cache/phase4h_validation_gated_candidates.csv
+  validation_aligned_query_csv: outputs/cache/phase4h_validation_aligned_queries.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase4h_cache_trust_v1/checkpoints/best.pt
+  validation_output_csv: outputs/metrics/phase4h_cache_trust_v1_validation.csv
+  gate_json: outputs/cache/phase4h_cache_trust_v1_gate.json
+  metrics_json: outputs/metrics/phase4h_cache_trust_v1.json
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  min_coverage: 0.10
+  target_coverage: 0.30
+  max_coverage: 0.70
+  seed: 20260724
+
+phase4h_final_recipe_v1:
+  # This section only fingerprints accepted development artifacts. It never opens final-holdout rows.
+  validation_metrics_json: outputs/metrics/phase4h_validation_v1.json
+  trust_metrics_json: outputs/metrics/phase4h_cache_trust_v1.json
+  manifest_json: outputs/cache/phase4h_final_recipe_v1_manifest.json
+  artifacts:
+    protocol_audit: outputs/metrics/phase4h_protocol_audit_v1.json
+    dino_frontier: outputs/cache/phase4h_dino_frontier_v1.json
+    tactile_index: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+    alignment_seed_20260724: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260724.pt
+    alignment_seed_20260725: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260725.pt
+    alignment_seed_20260726: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260726.pt
+    dino_safety_gate: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints/full.pt
+    dino_safety_gate_policy: outputs/cache/phase4h_dino_gate_oof_v1.json
+    cache_trust: /mnt/data/cheng/haptic-cache/phase4h_cache_trust_v1/checkpoints/best.pt
+    cache_trust_policy: outputs/cache/phase4h_cache_trust_v1_gate.json
+    validation_metrics: outputs/metrics/phase4h_validation_v1.json
