@@ -2361,6 +2361,26 @@ phase4f_dino_cross_attention_embedding_only_oof_v1:
   score_weights: embedding_only
   seed: 20260723
 
+phase4f_dino_patch_similarity_oof_v1:
+  # Training-free DINO diagnostic: local token correspondence only, no ranker fitting.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  query_output_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4f_dino_patch_similarity_oof_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  # A 3x3 spatial neighbourhood permits a one-patch registration error.
+  local_match_radius: 1
+  detail_similarity_weight: 0.5
+  seed: 20260723
+
 phase4f_v2_final_partition:
   # Reserve before V2 selection; do not build or inspect until V2 recipe is frozen.
   development_sources:
