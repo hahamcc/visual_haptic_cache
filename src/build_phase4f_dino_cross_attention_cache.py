@@ -71,29 +71,41 @@ def fold_run(fold: str, rows: list[dict[str, str]], folds: dict[str, str], predi
     fit = [row for row in rows if folds[row["image_name"]] != fold]
     query = [row for row in rows if folds[row["image_name"]] == fold]
     if {r["record_id"] for r in fit} & {r["record_id"] for r in query}: raise RuntimeError("Record leakage in Phase4F fold")
-    detail, context, k = int(cfg["detail_crop_size"]), int(cfg["context_crop_size"]), min(int(cfg["geometry_filter_k"]), len(fit))
+    detail, context = int(cfg["detail_crop_size"]), int(cfg["context_crop_size"])
+    train_k, eval_k = min(int(cfg["geometry_filter_k"]), len(fit)), min(int(cfg["geometry_filter_k"]), len(rows))
     gt = [(float(r["target_tip_x"]), float(r["target_tip_y"])) for r in fit]
+    all_gt = [(float(r["target_tip_x"]), float(r["target_tip_y"])) for r in rows]
     raw_geo = np.stack([motion_geometry_feature(r, x, y) for r, (x, y) in zip(fit, gt, strict=True)])
     _, gm, gs = standardize(raw_geo, raw_geo)
     hand_detail = np.stack([visual_patch_feature_from_patch(crop_contact_patch(r["vision_path"], x, y, detail)) for r, (x, y) in zip(fit, gt, strict=True)])
     hand_context = np.stack([visual_patch_feature_from_patch(crop_contact_patch(r["vision_path"], x, y, context)) for r, (x, y) in zip(fit, gt, strict=True)])
     _, dm, ds = standardize(hand_detail, hand_detail); _, cm, cs = standardize(hand_context, hand_context)
-    cache_d, cache_c, cache_g, cache_dh, cache_ch = normalized_features(fit, gt, gm, gs, dm, ds, cm, cs, detail, context)
+    # The ranker is fitted only on ``fit`` records, but OOF retrieval must see
+    # the complete development cache.  This mirrors Phase4E: same-record cache
+    # entries are excluded per query below, not removed wholesale by OOF fold.
+    fit_cache_d, fit_cache_c, fit_cache_g, fit_cache_dh, fit_cache_ch = normalized_features(fit, gt, gm, gs, dm, ds, cm, cs, detail, context)
+    cache_d, cache_c, cache_g, cache_dh, cache_ch = normalized_features(rows, all_gt, gm, gs, dm, ds, cm, cs, detail, context)
     fit_xy = [(float(predictions[r["image_name"]]["pred_x"]), float(predictions[r["image_name"]]["pred_y"])) for r in fit]
     query_xy = [(float(predictions[r["image_name"]]["pred_x"]), float(predictions[r["image_name"]]["pred_y"])) for r in query]
     fit_d, fit_c, fit_g, fit_dh, fit_ch = normalized_features(fit, fit_xy, gm, gs, dm, ds, cm, cs, detail, context)
     query_d, query_c, query_g, query_dh, query_ch = normalized_features(query, query_xy, gm, gs, dm, ds, cm, cs, detail, context)
     tactile_cache: dict[str, np.ndarray] = {}
     def touch(r: dict[str, str]) -> np.ndarray: return tactile_difference(r["touch_path"], tactile_cache, int(cfg["tactile_size"]))
-    print(f"phase4f fold {fold}: caching tactile embeddings for fit={len(fit)} query={len(query)}", flush=True)
-    fit_e = embedding_matrix(fit, touch, f"fold {fold} fit"); query_e = embedding_matrix(query, touch, f"fold {fold} query")
-    train_groups = build_shortlists(fit, fit_g, fit_dh, fit_ch, fit_e, fit, cache_g, cache_dh, cache_ch, fit_e, k, True)
-    eval_groups = build_shortlists(query, query_g, query_dh, query_ch, query_e, fit, cache_g, cache_dh, cache_ch, fit_e, k, False)
+    print(f"phase4f fold {fold}: caching tactile embeddings for development_cache={len(rows)}", flush=True)
+    cache_e = embedding_matrix(rows, touch, f"fold {fold} development cache")
+    embedding_by_name = {row["image_name"]: value for row, value in zip(rows, cache_e, strict=True)}
+    fit_e = np.stack([embedding_by_name[row["image_name"]] for row in fit]).astype(np.float32)
+    query_e = np.stack([embedding_by_name[row["image_name"]] for row in query]).astype(np.float32)
+    train_groups = build_shortlists(fit, fit_g, fit_dh, fit_ch, fit_e, fit, fit_cache_g, fit_cache_dh, fit_cache_ch, fit_e, train_k, True)
+    eval_groups = build_shortlists(query, query_g, query_dh, query_ch, query_e, rows, cache_g, cache_dh, cache_ch, cache_e, eval_k, True)
     train_idx, train_target, train_hand = train_groups[:3]; indices, targets, hand = eval_groups[:3]
+    if any(row["record_id"] == rows[int(cache_index)]["record_id"] for row, group in zip(query, indices, strict=True) for cache_index in group):
+        raise RuntimeError("Phase4F OOF evaluation shortlist contains a same-record cache entry.")
     train_ssim, train_iou = tactile_targets(fit, fit, train_idx, touch, float(cfg["tactile_mask_threshold"]), f"fold {fold} train")
     flags = hard_flags(train_hand, train_target, train_iou)
     print(f"phase4f fold {fold}: loading frozen {cfg['dino_model']} and encoding visual patches", flush=True)
     backbone = FrozenDinoV2(str(cfg["dino_model"]), int(cfg["dino_image_size"])).to(device)
+    fit_cache_dt, fit_cache_ct = encode(backbone, fit_cache_d, device, int(cfg["batch_size"])), encode(backbone, fit_cache_c, device, int(cfg["batch_size"]))
     cache_dt, cache_ct = encode(backbone, cache_d, device, int(cfg["batch_size"])), encode(backbone, cache_c, device, int(cfg["batch_size"]))
     fit_dt, fit_ct = encode(backbone, fit_d, device, int(cfg["batch_size"])), encode(backbone, fit_c, device, int(cfg["batch_size"]))
     query_dt, query_ct = encode(backbone, query_d, device, int(cfg["batch_size"])), encode(backbone, query_c, device, int(cfg["batch_size"]))
@@ -103,7 +115,7 @@ def fold_run(fold: str, rows: list[dict[str, str]], folds: dict[str, str], predi
     for epoch in range(int(cfg["epochs"])):
         for start in range(0, len(fit), int(cfg["batch_size"])):
             batch = np.arange(start, min(start + int(cfg["batch_size"]), len(fit))); local = train_idx[batch]
-            emb, ssim, iou = model(torch.from_numpy(fit_dt[batch]).to(device), torch.from_numpy(cache_dt[local]).to(device), torch.from_numpy(fit_ct[batch]).to(device), torch.from_numpy(cache_ct[local]).to(device), torch.from_numpy(fit_g[batch]).to(device), torch.from_numpy(cache_g[local]).to(device), torch.from_numpy(train_hand[batch]).to(device))
+            emb, ssim, iou = model(torch.from_numpy(fit_dt[batch]).to(device), torch.from_numpy(fit_cache_dt[local]).to(device), torch.from_numpy(fit_ct[batch]).to(device), torch.from_numpy(fit_cache_ct[local]).to(device), torch.from_numpy(fit_g[batch]).to(device), torch.from_numpy(fit_cache_g[local]).to(device), torch.from_numpy(train_hand[batch]).to(device))
             target = torch.from_numpy(train_target[batch]).to(device); weight = 1 + (float(cfg["hard_negative_weight"]) - 1) * torch.from_numpy(flags[batch]).to(device)
             regression = (nn.functional.smooth_l1_loss((emb-target)/target_std, torch.zeros_like(emb), reduction="none") * weight).mean()
             dist = torch.softmax(-target / float(cfg["target_temperature"]), 1); listwise = -(dist * torch.log_softmax(-emb / float(cfg["target_temperature"]), 1)).sum(1).mean()
@@ -111,14 +123,17 @@ def fold_run(fold: str, rows: list[dict[str, str]], folds: dict[str, str], predi
             optimizer.zero_grad(set_to_none=True); (regression + float(cfg["listwise_weight"])*listwise + aux).backward(); optimizer.step()
         print(f"phase4f fold {fold}: finished epoch {epoch + 1}/{int(cfg['epochs'])}", flush=True)
     ed, sd, id_ = model_scores(model, query_dt, cache_dt[indices], query_ct, cache_ct[indices], query_g, cache_g[indices], hand, device, int(cfg["batch_size"]))
-    score = composite_score(torch.from_numpy(ed), torch.from_numpy(sd), torch.from_numpy(id_), SCORE_WEIGHT_OPTIONS["embedding_only"]).numpy(); order = np.argsort(score, 1)
-    eval_ssim, eval_iou = tactile_targets(query, fit, indices, touch, float(cfg["tactile_mask_threshold"]), f"fold {fold} OOF"); eval_flags = hard_flags(hand, targets, eval_iou)
+    score_weights = str(cfg["score_weights"])
+    if score_weights not in SCORE_WEIGHT_OPTIONS:
+        raise ValueError(f"Unknown Phase4F score_weights={score_weights!r}; choose one of {sorted(SCORE_WEIGHT_OPTIONS)}.")
+    score = composite_score(torch.from_numpy(ed), torch.from_numpy(sd), torch.from_numpy(id_), SCORE_WEIGHT_OPTIONS[score_weights]).numpy(); order = np.argsort(score, 1)
+    eval_ssim, eval_iou = tactile_targets(query, rows, indices, touch, float(cfg["tactile_mask_threshold"]), f"fold {fold} OOF"); eval_flags = hard_flags(hand, targets, eval_iou)
     queries, candidates = [], []
     for qi, row in enumerate(query):
-        choice = int(order[qi, 0]); selected = fit[int(indices[qi, choice])]; metric = tactile_metrics(touch(row), touch(selected), float(cfg["tactile_mask_threshold"])); oracle = int(np.argmin(targets[qi])); rank = int(ranks(score[qi])[oracle])
+        choice = int(order[qi, 0]); selected = rows[int(indices[qi, choice])]; metric = tactile_metrics(touch(row), touch(selected), float(cfg["tactile_mask_threshold"])); oracle = int(np.argmin(targets[qi])); rank = int(ranks(score[qi])[oracle])
         queries.append({"query_record_id":row["record_id"],"query_image_name":row["image_name"],"query_probe":row["probe"],"oof_fold":fold,"pred_x":f"{query_xy[qi][0]:.3f}","pred_y":f"{query_xy[qi][1]:.3f}","selected_cache_record_id":selected["record_id"],"selected_cache_image_name":selected["image_name"],"ranker_best_score":f"{score[qi,choice]:.6f}","ranker_margin":f"{score[qi,order[qi,1]]-score[qi,choice]:.6f}","ranker_oracle_embedding_rank":str(rank),**{key:f"{metric[key]:.6f}" for key in ("tactile_diff_mae", "tactile_ssim", "tactile_mask_iou")}})
         for pos, item in enumerate(order[qi], 1):
-            cache_row=fit[int(indices[qi,item])]; candidates.append({"query_record_id":row["record_id"],"query_image_name":row["image_name"],"query_probe":row["probe"],"oof_fold":fold,"candidate_rank":str(pos),"candidate_score":f"{score[qi,item]:.6f}","embedding_score":f"{ed[qi,item]:.6f}","ssim_score":f"{sd[qi,item]:.6f}","iou_score":f"{id_[qi,item]:.6f}","cross_attention_score":f"{score[qi,item]:.6f}","hard_negative_flag":str(int(eval_flags[qi,item])),"candidate_record_id":cache_row["record_id"],"candidate_image_name":cache_row["image_name"],"candidate_tactile_embedding_distance":f"{targets[qi,item]:.6f}","candidate_tactile_ssim":f"{eval_ssim[qi,item]:.6f}","candidate_tactile_mask_iou":f"{eval_iou[qi,item]:.6f}","candidate_oracle_embedding_rank":str(int(ranks(targets[qi])[item]))})
+            cache_row=rows[int(indices[qi,item])]; candidates.append({"query_record_id":row["record_id"],"query_image_name":row["image_name"],"query_probe":row["probe"],"oof_fold":fold,"candidate_rank":str(pos),"candidate_score":f"{score[qi,item]:.6f}","embedding_score":f"{ed[qi,item]:.6f}","ssim_score":f"{sd[qi,item]:.6f}","iou_score":f"{id_[qi,item]:.6f}","cross_attention_score":f"{score[qi,item]:.6f}","hard_negative_flag":str(int(eval_flags[qi,item])),"candidate_record_id":cache_row["record_id"],"candidate_image_name":cache_row["image_name"],"candidate_tactile_embedding_distance":f"{targets[qi,item]:.6f}","candidate_tactile_ssim":f"{eval_ssim[qi,item]:.6f}","candidate_tactile_mask_iou":f"{eval_iou[qi,item]:.6f}","candidate_oracle_embedding_rank":str(int(ranks(targets[qi])[item]))})
     ensure_dir(project_path(cfg["checkpoint_dir"])); torch.save({"model_state":model.state_dict(),"dino_model":cfg["dino_model"],"fold":fold},project_path(cfg["checkpoint_dir"])/f"fold_{fold}.pt")
     return queries, candidates
 
@@ -133,7 +148,7 @@ def build(config_path: str, section: str) -> dict:
         q,c=fold_run(fold,rows,folds,predictions,cfg,device); queries+=q; candidates+=c
     if len({r["query_image_name"] for r in queries})!=len(rows): raise RuntimeError("OOF output must cover every development train query once.")
     write_csv_rows(project_path(cfg["query_output_csv"]),queries,QUERY_FIELDS); write_csv_rows(project_path(cfg["candidate_output_csv"]),candidates,CANDIDATE_FIELDS)
-    summary={"mode":"phase4f_strict_oof_dinov2_spatial_cross_attention","queries":len(queries),"candidates":len(candidates),"dino_model":cfg["dino_model"],"integrity":{"same_record_cache_excluded":True,"sealed_final_holdout_rows_read":0,"query_tactile_usage":"offline supervision/evaluation only"}}
+    summary={"mode":"phase4f_strict_oof_dinov2_spatial_cross_attention","queries":len(queries),"candidates":len(candidates),"dino_model":cfg["dino_model"],"score_weights":cfg["score_weights"],"integrity":{"evaluation_cache":"complete_development_pool","same_record_cache_excluded":True,"sealed_final_holdout_rows_read":0,"query_tactile_usage":"offline supervision/evaluation only"}}
     write_json(project_path(cfg["metrics_json"]),summary); print(summary); return summary
 
 
