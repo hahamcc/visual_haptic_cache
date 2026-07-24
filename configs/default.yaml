@@ -2299,3 +2299,51 @@ expanded_region_dataset_phase35_final_holdout_v1_split1:
   min_tip_base_distance: 6.0
   max_tip_base_distance: 45.0
   excluded_records: []
+
+phase4f_dino_cross_attention_oof_v1:
+  # V2 development-only experiment. The implementation rejects final-holdout rows.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4f_dino_cross_attention_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4f_dino_cross_attention_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4f_dino_cross_attention_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4f_dino_cross_attention_oof_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  epochs: 6
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  dropout: 0.1
+  hidden_dim: 192
+  attention_heads: 4
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  ssim_loss_weight: 0.125
+  iou_loss_weight: 0.125
+  hard_negative_weight: 3.0
+  seed: 20260723
+
+phase4f_v2_final_partition:
+  # Reserve before V2 selection; do not build or inspect until V2 recipe is frozen.
+  development_sources:
+    - split: "0"
+      ranges:
+        - start: 750
+          limit: 200
+    - split: "1"
+      ranges:
+        - start: 1000
+          limit: 250
+  final_holdout_sources:
+    - split: "2"
+      ranges:
+        - start: 2000
+          limit: 100
+  output_csv: data/processed/phase4f_v2_record_partitions.csv
+  summary_json: data/processed/phase4f_v2_record_partitions.json
