@@ -2381,6 +2381,51 @@ phase4f_dino_patch_similarity_oof_v1:
   detail_similarity_weight: 0.5
   seed: 20260723
 
+phase4g_dino_v1_fusion_v1:
+  # V2.1: strict OOF convex fusion; no final-holdout path is accepted.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  v1_oof_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_oof_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_oof_query_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  dino_oof_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  v1_validation_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4g_dino_v1_fusion_v1/v1_validation/checkpoints
+  v1_validation_query_csv: outputs/cache/phase4g_v1_validation_queries.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  dino_validation_query_csv: outputs/cache/phase4g_dino_validation_queries.csv
+  dino_validation_candidate_csv: outputs/cache/phase4g_dino_validation_candidates.csv
+  fusion_oof_query_csv: outputs/cache/phase4g_dino_v1_fusion_oof_queries.csv
+  fusion_oof_candidate_csv: outputs/cache/phase4g_dino_v1_fusion_oof_candidates.csv
+  fusion_validation_query_csv: outputs/cache/phase4g_dino_v1_fusion_validation_queries.csv
+  fusion_validation_candidate_csv: outputs/cache/phase4g_dino_v1_fusion_validation_candidates.csv
+  fusion_weights_csv: outputs/metrics/phase4g_dino_v1_fusion_weights.csv
+  metrics_json: outputs/metrics/phase4g_dino_v1_fusion_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  local_match_radius: 1
+  detail_similarity_weight: 0.5
+  batch_size: 8
+  v1_batch_size: 16
+  v1_epochs: 4
+  v1_learning_rate: 0.001
+  v1_weight_decay: 0.0001
+  v1_dropout: 0.1
+  v1_listwise_weight: 1.0
+  target_temperature: 0.02
+  fusion_score_temperature: 1.0
+  fusion_epochs: 400
+  fusion_learning_rate: 0.05
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  v1_ranker_seed: 20260805
+  seed: 20260724
+
 phase4f_v2_final_partition:
   # Reserve before V2 selection; do not build or inspect until V2 recipe is frozen.
   development_sources:
