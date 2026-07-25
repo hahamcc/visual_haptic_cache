@@ -65,6 +65,31 @@ QUERY_FIELDS = [
     "tactile_mask_iou",
 ]
 
+FACTOR_CANDIDATE_FIELDS = [
+    "query_record_id",
+    "query_image_name",
+    "query_probe",
+    "oof_fold",
+    "candidate_rank",
+    "v1_score",
+    "dino_rank",
+    "dino_score",
+    "detail_patch_score",
+    "context_patch_score",
+    "wide_patch_score",
+    "position_aware_match_score",
+    "predicted_intensity_distance_global_median",
+    "predicted_intensity_distance_motion_only",
+    "predicted_intensity_distance_dino_only",
+    "predicted_intensity_distance_dino_motion",
+    "candidate_record_id",
+    "candidate_image_name",
+    "candidate_tactile_embedding_distance",
+    "candidate_tactile_ssim",
+    "candidate_tactile_mask_iou",
+    "candidate_oracle_embedding_rank",
+]
+
 
 def factor_index_fingerprint(
     rows: list[dict[str, str]],
@@ -773,6 +798,82 @@ def build_query_output(
     return output
 
 
+def build_factor_candidate_output(
+    rows: list[dict[str, str]],
+    candidates: np.ndarray,
+    v1_groups: dict[str, list[dict[str, str]]],
+    recipe_map: dict[tuple[str, str], dict[str, str]],
+    dino_ranks: np.ndarray,
+    oracle_embedding_ranks: np.ndarray,
+    predicted_distances: dict[str, np.ndarray],
+    fold_by_name: dict[str, str],
+) -> list[dict[str, str]]:
+    """Export online candidate signals plus offline labels for Phase4I."""
+    output = []
+    for query_index, query in enumerate(rows):
+        query_name = query["image_name"]
+        for candidate_index, v1_row in enumerate(v1_groups[query_name]):
+            cache = rows[int(candidates[query_index, candidate_index])]
+            recipe = recipe_map[(query_name, cache["image_name"])]
+            output.append(
+                {
+                    "query_record_id": query["record_id"],
+                    "query_image_name": query_name,
+                    "query_probe": query["probe"],
+                    "oof_fold": fold_by_name[query_name],
+                    "candidate_rank": v1_row["candidate_rank"],
+                    "v1_score": v1_row["candidate_score"],
+                    "dino_rank": str(
+                        int(dino_ranks[query_index, candidate_index])
+                    ),
+                    "dino_score": recipe["candidate_score"],
+                    "detail_patch_score": recipe.get("detail_patch_score", ""),
+                    "context_patch_score": recipe.get(
+                        "context_patch_score",
+                        "",
+                    ),
+                    "wide_patch_score": recipe.get("wide_patch_score", ""),
+                    "position_aware_match_score": recipe.get(
+                        "position_aware_match_score",
+                        "",
+                    ),
+                    **{
+                        f"predicted_intensity_distance_{predictor}": (
+                            f"{predicted_distances[predictor][query_index, candidate_index]:.9f}"
+                        )
+                        for predictor in (
+                            "global_median",
+                            "motion_only",
+                            "dino_only",
+                            "dino_motion",
+                        )
+                    },
+                    "candidate_record_id": cache["record_id"],
+                    "candidate_image_name": cache["image_name"],
+                    "candidate_tactile_embedding_distance": recipe[
+                        "candidate_tactile_embedding_distance"
+                    ],
+                    "candidate_tactile_ssim": recipe.get(
+                        "candidate_tactile_ssim",
+                        "",
+                    ),
+                    "candidate_tactile_mask_iou": recipe.get(
+                        "candidate_tactile_mask_iou",
+                        "",
+                    ),
+                    "candidate_oracle_embedding_rank": str(
+                        int(
+                            oracle_embedding_ranks[
+                                query_index,
+                                candidate_index,
+                            ]
+                        )
+                    ),
+                }
+            )
+    return output
+
+
 def evaluate(config_path: str, section: str) -> dict:
     cfg = load_config(config_path)[section]
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -1229,6 +1330,26 @@ def evaluate(config_path: str, section: str) -> dict:
                 flush=True,
             )
         write_csv_rows(query_output_path, all_query_output, QUERY_FIELDS)
+
+    factor_candidate_output = build_factor_candidate_output(
+        rows,
+        candidates,
+        v1_groups,
+        recipe_map,
+        dino_ranks,
+        oracle_embedding_ranks,
+        predicted_distances,
+        fold_by_name,
+    )
+    write_csv_rows(
+        project_path(cfg["candidate_output_csv"]),
+        factor_candidate_output,
+        FACTOR_CANDIDATE_FIELDS,
+    )
+    print(
+        f"phase4h.2: wrote {len(factor_candidate_output)} candidate rows",
+        flush=True,
+    )
 
     print("phase4h.2: starting vectorized record bootstrap", flush=True)
     prediction_summary = {}

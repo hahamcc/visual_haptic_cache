@@ -9,6 +9,7 @@ import numpy as np
 import torch
 
 from src.evaluate_phase4h_factorized_intensity_oof import (
+    build_factor_candidate_output,
     bootstrap_prediction_error,
     fast_bootstrap_comparison,
     load_compatible_regressor_checkpoint,
@@ -122,6 +123,84 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
             result["far_probe75_100"]["bootstrap_95_ci"]["tactile_mask_iou"][0],
             0,
         )
+
+    def test_factor_candidate_output_exports_only_ranker_inputs_and_labels(
+        self,
+    ) -> None:
+        rows = [
+            {
+                "record_id": "rec_00000",
+                "image_name": "q.png",
+                "probe": "75",
+            },
+            {
+                "record_id": "rec_00001",
+                "image_name": "c.png",
+                "probe": "5",
+            },
+        ]
+        v1_groups = {
+            "q.png": [
+                {
+                    "candidate_rank": "1",
+                    "candidate_score": "0.1",
+                }
+            ],
+            "c.png": [
+                {
+                    "candidate_rank": "1",
+                    "candidate_score": "0.2",
+                }
+            ],
+        }
+        recipe = {
+            ("q.png", "c.png"): {
+                "candidate_score": "-0.8",
+                "detail_patch_score": "0.8",
+                "context_patch_score": "0.7",
+                "wide_patch_score": "",
+                "position_aware_match_score": "",
+                "candidate_tactile_embedding_distance": "0.2",
+                "candidate_tactile_ssim": "0.8",
+                "candidate_tactile_mask_iou": "0.3",
+            },
+            ("c.png", "q.png"): {
+                "candidate_score": "-0.6",
+                "detail_patch_score": "0.6",
+                "context_patch_score": "0.5",
+                "wide_patch_score": "",
+                "position_aware_match_score": "",
+                "candidate_tactile_embedding_distance": "0.3",
+                "candidate_tactile_ssim": "0.7",
+                "candidate_tactile_mask_iou": "0.2",
+            },
+        }
+        distances = {
+            key: np.asarray([[value], [value + 0.1]], dtype=np.float32)
+            for key, value in {
+                "global_median": 0.4,
+                "motion_only": 0.3,
+                "dino_only": 0.2,
+                "dino_motion": 0.1,
+            }.items()
+        }
+        output = build_factor_candidate_output(
+            rows,
+            np.asarray([[1], [0]], dtype=np.int32),
+            v1_groups,
+            recipe,
+            np.asarray([[1], [1]], dtype=np.int32),
+            np.asarray([[2], [2]], dtype=np.int32),
+            distances,
+            {"q.png": "0", "c.png": "1"},
+        )
+        self.assertEqual(len(output), 2)
+        self.assertEqual(output[0]["candidate_image_name"], "c.png")
+        self.assertEqual(
+            output[0]["predicted_intensity_distance_dino_motion"],
+            "0.100000001",
+        )
+        self.assertNotIn("query_intensity_prediction_mae", output[0])
 
     def test_low_capacity_training_smoke(self) -> None:
         rng = np.random.default_rng(3)
