@@ -2744,3 +2744,42 @@ phase4h_final_recipe_v1:
     cache_trust: /mnt/data/cheng/haptic-cache/phase4h_cache_trust_v1/checkpoints/best.pt
     cache_trust_policy: outputs/cache/phase4h_cache_trust_v1_gate.json
     validation_metrics: outputs/metrics/phase4h_validation_v1.json
+
+phase4h_tactile_hard_case_mining_v1:
+  # Failure-branch analysis only. Inputs are strict development OOF; validation/final are forbidden.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_query_csv: outputs/cache/phase4h_dino_ablation_oof_v1_queries.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  query_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_queries.csv
+  pair_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_pairs.csv
+  record_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_records.csv
+  collection_plan_csv: outputs/metrics/phase4h_tactile_collection_plan_v1.csv
+  metrics_json: outputs/metrics/phase4h_tactile_hard_cases_v1.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_hard_cases_v1/debug
+  geometry_filter_k: 32
+  require_failed_oof: true
+  far_probe_min: 75
+  max_hard_pairs_per_query: 4
+  minimum_spatial_iou_gain: 0.01
+  mae_harm_epsilon: 0.0
+  minimum_aligned_iou_drop: 0.01
+  minimum_far_ssim_drop: 0.005
+  priority_weights:
+    hard_negative_pair: 3.0
+    spatial_gain_mae_harm: 5.0
+    aligned_projector_harm: 3.0
+    far_failure: 2.0
+    triple_win_reference: 1.0
+  target_reference_records: 50
+  target_new_records: 50
+  target_new_hard_negative_pairs: 100
+  minimum_contact_regions: 3
+  repeats_per_region: 3
+  hard_negative_pairs_per_new_record: 2
+  maximum_debug_cases: 100
