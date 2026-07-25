@@ -31,6 +31,18 @@ from .utils import ensure_dir, read_csv_rows, write_csv_rows, write_json
 
 
 METRICS = ("tactile_diff_mae", "tactile_ssim", "tactile_mask_iou")
+ONLINE_PROGRESS_FIELDS = (
+    "predicted_ttc",
+    "ttc_entropy",
+    "trajectory_stability",
+    "motion_speed",
+    "motion_cumulative",
+    "trajectory_real_fraction",
+    "trajectory_history_fraction",
+    "trajectory_padding_ratio",
+    "trajectory_max_gap_fraction",
+    "query_padding_ratio",
+)
 QUERY_FIELDS = [
     "query_record_id",
     "query_image_name",
@@ -46,6 +58,22 @@ QUERY_FIELDS = [
     "cascade_tactile_diff_mae",
     "cascade_tactile_ssim",
     "cascade_tactile_mask_iou",
+    "v1_ranker_oracle_embedding_rank",
+    "dino_only_selected_cache_image_name",
+    "dino_only_ranker_oracle_embedding_rank",
+    "dino_only_tactile_diff_mae",
+    "dino_only_tactile_ssim",
+    "dino_only_tactile_mask_iou",
+    "intensity_only_selected_cache_image_name",
+    "intensity_only_ranker_oracle_embedding_rank",
+    "intensity_only_tactile_diff_mae",
+    "intensity_only_tactile_ssim",
+    "intensity_only_tactile_mask_iou",
+    "v1_sacrifice",
+    "dino_gain",
+    "intensity_gain",
+    "v1_rank_displacement",
+    *ONLINE_PROGRESS_FIELDS,
     "strict_triple_win_label",
     "gate_probability",
     "gate_threshold",
@@ -128,6 +156,13 @@ def query_standardize(values: np.ndarray) -> np.ndarray:
     return ((values - mean) / np.maximum(std, 1e-6)).astype(np.float32)
 
 
+def rank_positions(values: np.ndarray) -> np.ndarray:
+    order = np.argsort(values, kind="stable")
+    positions = np.empty(len(values), dtype=np.int32)
+    positions[order] = np.arange(1, len(values) + 1, dtype=np.int32)
+    return positions
+
+
 def normalized_entropy(scores: np.ndarray) -> np.ndarray:
     logits = -scores
     logits -= logits.max(axis=1, keepdims=True)
@@ -145,8 +180,8 @@ def normalized_margin(scores: np.ndarray) -> np.ndarray:
     return (ordered[:, 1] - ordered[:, 0]).astype(np.float32)
 
 
-def cascade_feature_names() -> list[str]:
-    return [
+def cascade_feature_names(include_progress: bool = False) -> list[str]:
+    names = [
         "v1_margin",
         "dino_margin",
         "intensity_margin",
@@ -159,17 +194,19 @@ def cascade_feature_names() -> list[str]:
         "v1_dino_score_correlation",
         "v1_intensity_score_correlation",
     ]
+    return names + list(ONLINE_PROGRESS_FIELDS) if include_progress else names
 
 
 def cascade_query_features(
     v1_scores: np.ndarray,
     dino_scores: np.ndarray,
     intensity_scores: np.ndarray,
+    progress_features: np.ndarray | None = None,
 ) -> np.ndarray:
     v1_choice = v1_scores.argmin(axis=1)
     dino_choice = dino_scores.argmin(axis=1)
     intensity_choice = intensity_scores.argmin(axis=1)
-    return np.stack(
+    features = np.stack(
         (
             normalized_margin(v1_scores),
             normalized_margin(dino_scores),
@@ -185,6 +222,14 @@ def cascade_query_features(
         ),
         axis=1,
     ).astype(np.float32)
+    if progress_features is None:
+        return features
+    if len(progress_features) != len(features):
+        raise ValueError("Progress features must align one-to-one with queries")
+    return np.concatenate(
+        (features, progress_features.astype(np.float32)),
+        axis=1,
+    )
 
 
 class FactorizedResidualCascade(nn.Module):
@@ -325,7 +370,9 @@ def train_cascade(
     features = ((raw_features - feature_mean) / feature_std).astype(np.float32)
     metadata = {
         **metadata,
-        "feature_names": cascade_feature_names(),
+        "feature_names": cascade_feature_names(
+            bool(cfg.get("use_online_progress_features", False))
+        ),
         "feature_mean": feature_mean,
         "feature_std": feature_std,
     }
@@ -450,8 +497,107 @@ def predict_cascade(
     )
 
 
-def gate_feature_names() -> list[str]:
-    return [
+def online_progress_features(
+    groups: dict[str, list[dict[str, str]]],
+    query_names: list[str],
+) -> np.ndarray:
+    output = []
+    for name in query_names:
+        reference = np.asarray(
+            [
+                required_float(groups[name][0], field)
+                for field in ONLINE_PROGRESS_FIELDS
+            ],
+            dtype=np.float32,
+        )
+        for row in groups[name][1:]:
+            current = np.asarray(
+                [
+                    required_float(row, field)
+                    for field in ONLINE_PROGRESS_FIELDS
+                ],
+                dtype=np.float32,
+            )
+            if not np.allclose(reference, current, atol=1e-7):
+                raise RuntimeError(
+                    f"Phase4I inconsistent repeated progress fields for {name}"
+                )
+        output.append(reference)
+    return np.stack(output).astype(np.float32)
+
+
+def selected_score_tradeoffs(
+    arrays: dict[str, np.ndarray],
+    cascade_scores: np.ndarray,
+    cascade_weights: np.ndarray,
+) -> np.ndarray:
+    query_index = np.arange(len(cascade_scores))
+    v1_choice = arrays["v1"].argmin(axis=1)
+    cascade_choice = cascade_scores.argmin(axis=1)
+    v1_sacrifice = (
+        arrays["v1"][query_index, cascade_choice]
+        - arrays["v1"][query_index, v1_choice]
+    )
+    dino_gain = (
+        arrays["dino"][query_index, v1_choice]
+        - arrays["dino"][query_index, cascade_choice]
+    )
+    intensity_gain = (
+        arrays["intensity"][query_index, v1_choice]
+        - arrays["intensity"][query_index, cascade_choice]
+    )
+    v1_rank = np.stack(
+        [rank_positions(row) for row in arrays["v1"]],
+        axis=0,
+    )
+    dino_rank = np.stack(
+        [rank_positions(row) for row in arrays["dino"]],
+        axis=0,
+    )
+    intensity_rank = np.stack(
+        [rank_positions(row) for row in arrays["intensity"]],
+        axis=0,
+    )
+    denominator = max(arrays["v1"].shape[1] - 1, 1)
+    return np.stack(
+        (
+            v1_sacrifice,
+            dino_gain,
+            intensity_gain,
+            (v1_rank[query_index, cascade_choice] - 1) / denominator,
+            (dino_rank[query_index, cascade_choice] - 1) / denominator,
+            (intensity_rank[query_index, cascade_choice] - 1) / denominator,
+            cascade_weights[:, 0] * dino_gain,
+            cascade_weights[:, 1] * intensity_gain,
+            cascade_weights.sum(axis=1),
+        ),
+        axis=1,
+    ).astype(np.float32)
+
+
+def residual_counterfactual_scores(
+    arrays: dict[str, np.ndarray],
+    cascade_weights: np.ndarray,
+) -> dict[str, np.ndarray]:
+    return {
+        "dino_only": (
+            arrays["v1"]
+            + cascade_weights[:, 0, None] * arrays["dino"]
+        ).astype(np.float32),
+        "intensity_only": (
+            arrays["v1"]
+            + cascade_weights[:, 1, None] * arrays["intensity"]
+        ).astype(np.float32),
+        "full": (
+            arrays["v1"]
+            + cascade_weights[:, 0, None] * arrays["dino"]
+            + cascade_weights[:, 1, None] * arrays["intensity"]
+        ).astype(np.float32),
+    }
+
+
+def gate_feature_names(include_progress: bool = False) -> list[str]:
+    names = [
         "cascade_margin",
         "cascade_entropy",
         "v1_margin",
@@ -463,15 +609,30 @@ def gate_feature_names() -> list[str]:
         "dino_weight",
         "intensity_weight",
     ]
+    if not include_progress:
+        return names
+    return names + [
+        "v1_sacrifice",
+        "dino_gain",
+        "intensity_gain",
+        "v1_rank_displacement",
+        "selected_dino_rank",
+        "selected_intensity_rank",
+        "weighted_dino_gain",
+        "weighted_intensity_gain",
+        "residual_total_weight",
+        *ONLINE_PROGRESS_FIELDS,
+    ]
 
 
 def gate_features(
     arrays: dict[str, np.ndarray],
     cascade_scores: np.ndarray,
     cascade_weights: np.ndarray,
+    progress_features: np.ndarray | None = None,
 ) -> np.ndarray:
     cascade_choice = cascade_scores.argmin(axis=1)
-    return np.stack(
+    features = np.stack(
         (
             normalized_margin(cascade_scores),
             normalized_entropy(cascade_scores),
@@ -488,6 +649,20 @@ def gate_features(
         ),
         axis=1,
     ).astype(np.float32)
+    if progress_features is None:
+        return features
+    return np.concatenate(
+        (
+            features,
+            selected_score_tradeoffs(
+                arrays,
+                cascade_scores,
+                cascade_weights,
+            ),
+            progress_features.astype(np.float32),
+        ),
+        axis=1,
+    )
 
 
 def build_gate_oof_splits(
@@ -635,7 +810,9 @@ def train_linear_gate(
                     "model_state": model.state_dict(),
                     "metadata": {
                         **metadata,
-                        "feature_names": gate_feature_names(),
+                        "feature_names": gate_feature_names(
+                            bool(cfg.get("use_online_progress_features", False))
+                        ),
                         "feature_mean": mean,
                         "feature_std": std,
                     },
@@ -687,6 +864,44 @@ def predict_gate(
         )
 
 
+def consistent_reference_rows(
+    query_rows: list[dict[str, str]],
+    groups: dict[str, list[dict[str, str]]],
+    scores: np.ndarray,
+) -> list[dict[str, str]]:
+    """Recompute oracle recall with one definition for every ranker.
+
+    The metric is the predicted-ranking position of the minimum tactile
+    embedding-distance candidate. It is not the tactile-oracle position of
+    the candidate selected by the ranker.
+    """
+    output = []
+    for index, query in enumerate(query_rows):
+        group = groups[query["query_image_name"]]
+        selected_index = int(np.argmin(scores[index]))
+        if (
+            group[selected_index]["candidate_image_name"]
+            != query["selected_cache_image_name"]
+        ):
+            raise RuntimeError(
+                "Phase4I V1 score Top-1 does not match its query output for "
+                f"{query['query_image_name']}"
+            )
+        target = np.asarray(
+            [
+                required_float(row, "candidate_tactile_embedding_distance")
+                for row in group
+            ],
+            dtype=np.float32,
+        )
+        row = dict(query)
+        row["ranker_oracle_embedding_rank"] = str(
+            int(rank_positions(scores[index])[int(np.argmin(target))])
+        )
+        output.append(row)
+    return output
+
+
 def build_cascade_query_rows(
     query_rows: list[dict[str, str]],
     groups: dict[str, list[dict[str, str]]],
@@ -695,13 +910,16 @@ def build_cascade_query_rows(
     weights: np.ndarray,
     source_by_name: dict[str, dict[str, str]],
     cfg: dict,
+    touch_cache: dict[str, np.ndarray] | None = None,
+    label: str = "cascade",
 ) -> list[dict[str, str]]:
-    touch_cache: dict[str, np.ndarray] = {}
+    touch_cache = {} if touch_cache is None else touch_cache
     output = []
     for index, query in enumerate(query_rows):
         if index % 250 == 0:
             print(
-                f"phase4i tactile evaluation: {index}/{len(query_rows)} queries",
+                f"phase4i {label} tactile evaluation: "
+                f"{index}/{len(query_rows)} queries",
                 flush=True,
             )
         group = groups[query["query_image_name"]]
@@ -722,6 +940,13 @@ def build_cascade_query_rows(
             float(cfg["tactile_mask_threshold"]),
         )
         ordered = np.argsort(scores[index], kind="stable")
+        target = np.asarray(
+            [
+                required_float(row, "candidate_tactile_embedding_distance")
+                for row in group
+            ],
+            dtype=np.float32,
+        )
         output.append(
             {
                 "query_record_id": query["query_record_id"],
@@ -730,9 +955,13 @@ def build_cascade_query_rows(
                 "oof_fold": query["oof_fold"],
                 "selected_cache_record_id": candidate["candidate_record_id"],
                 "selected_cache_image_name": candidate["candidate_image_name"],
-                "ranker_oracle_embedding_rank": candidate[
-                    "candidate_oracle_embedding_rank"
-                ],
+                "ranker_oracle_embedding_rank": str(
+                    int(
+                        rank_positions(scores[index])[
+                            int(np.argmin(target))
+                        ]
+                    )
+                ),
                 "ranker_best_score": f"{scores[index, choice]:.9f}",
                 "ranker_margin": (
                     f"{scores[index, int(ordered[1])] - scores[index, choice]:.9f}"
@@ -746,7 +975,8 @@ def build_cascade_query_rows(
             }
         )
     print(
-        f"phase4i tactile evaluation: {len(query_rows)}/{len(query_rows)} queries",
+        f"phase4i {label} tactile evaluation: "
+        f"{len(query_rows)}/{len(query_rows)} queries",
         flush=True,
     )
     return output
@@ -842,10 +1072,22 @@ def train(config_path: str, section: str) -> dict:
         ),
         "target": matrix("candidate_tactile_embedding_distance"),
     }
+    use_progress = bool(cfg.get("use_online_progress_features", False))
+    progress_features = (
+        online_progress_features(factor_groups, query_names)
+        if use_progress
+        else None
+    )
+    v1_reference_rows = consistent_reference_rows(
+        query_rows,
+        factor_groups,
+        arrays["v1"],
+    )
     raw_features = cascade_query_features(
         arrays["v1"],
         arrays["dino"],
         arrays["intensity"],
+        progress_features,
     )
     records = np.asarray(
         [row["query_record_id"] for row in query_rows]
@@ -946,22 +1188,62 @@ def train(config_path: str, section: str) -> dict:
         cascade_scores[held_out] = np.mean(seed_scores, axis=0)
         cascade_weights[held_out] = np.mean(seed_weights, axis=0)
 
+    shared_touch_cache: dict[str, np.ndarray] = {}
     cascade_choices = cascade_scores.argmin(axis=1)
     cascade_rows = build_cascade_query_rows(
-        query_rows,
+        v1_reference_rows,
         factor_groups,
         cascade_choices,
         cascade_scores,
         cascade_weights,
         source_by_name,
         cfg,
+        shared_touch_cache,
+        "full residual",
     )
-    targets = strict_triple_labels(query_rows, cascade_rows)
+    counterfactual_scores = residual_counterfactual_scores(
+        arrays,
+        cascade_weights,
+    )
+    dino_only_scores = counterfactual_scores["dino_only"]
+    intensity_only_scores = counterfactual_scores["intensity_only"]
+    if not np.allclose(
+        counterfactual_scores["full"],
+        cascade_scores,
+        atol=1e-5,
+    ):
+        raise RuntimeError(
+            "Phase4I counterfactual full score does not reproduce cascade"
+        )
+    dino_only_rows = build_cascade_query_rows(
+        v1_reference_rows,
+        factor_groups,
+        dino_only_scores.argmin(axis=1),
+        dino_only_scores,
+        cascade_weights,
+        source_by_name,
+        cfg,
+        shared_touch_cache,
+        "DINO-only residual",
+    )
+    intensity_only_rows = build_cascade_query_rows(
+        v1_reference_rows,
+        factor_groups,
+        intensity_only_scores.argmin(axis=1),
+        intensity_only_scores,
+        cascade_weights,
+        source_by_name,
+        cfg,
+        shared_touch_cache,
+        "intensity-only residual",
+    )
+    targets = strict_triple_labels(v1_reference_rows, cascade_rows)
 
     raw_gate_features = gate_features(
         arrays,
         cascade_scores,
         cascade_weights,
+        progress_features,
     )
     gate_logits = np.zeros(len(query_rows), dtype=np.float32)
     gate_reports = []
@@ -1017,7 +1299,7 @@ def train(config_path: str, section: str) -> dict:
         gate = choose_threshold(
             gate_probabilities,
             targets,
-            query_rows,
+            v1_reference_rows,
             cascade_rows,
             float(cfg["minimum_gate_coverage"]),
             float(cfg["minimum_gate_precision"]),
@@ -1041,30 +1323,59 @@ def train(config_path: str, section: str) -> dict:
         if threshold is not None
         else np.zeros(len(query_rows), dtype=bool)
     )
-    gated_rows = selected_rows(query_rows, cascade_rows, gate_accepted)
+    gated_rows = selected_rows(
+        v1_reference_rows,
+        cascade_rows,
+        gate_accepted,
+    )
     comparison_cfg = {
         "bootstrap_iterations": int(cfg["bootstrap_iterations"]),
         "bootstrap_seed": int(cfg["bootstrap_seed"]),
     }
     print("phase4i: starting vectorized record bootstrap", flush=True)
     cascade_comparison = fast_bootstrap_comparison(
-        query_rows,
+        v1_reference_rows,
         cascade_rows,
         comparison_cfg,
     )
+    dino_only_comparison = fast_bootstrap_comparison(
+        v1_reference_rows,
+        dino_only_rows,
+        comparison_cfg,
+    )
+    intensity_only_comparison = fast_bootstrap_comparison(
+        v1_reference_rows,
+        intensity_only_rows,
+        comparison_cfg,
+    )
     gated_comparison = fast_bootstrap_comparison(
-        query_rows,
+        v1_reference_rows,
         gated_rows,
         comparison_cfg,
     )
     deployment_accepted = bool(
         gate["enabled"] and gated_comparison["accepted"]
     )
-    final_rows = gated_rows if deployment_accepted else query_rows
+    final_rows = (
+        gated_rows if deployment_accepted else v1_reference_rows
+    )
 
     query_output = []
-    for index, (v1, cascade, gated, final) in enumerate(
-        zip(query_rows, cascade_rows, gated_rows, final_rows, strict=True)
+    tradeoffs = selected_score_tradeoffs(
+        arrays,
+        cascade_scores,
+        cascade_weights,
+    )
+    for index, (v1, cascade, dino_only, intensity_only, gated, final) in enumerate(
+        zip(
+            v1_reference_rows,
+            cascade_rows,
+            dino_only_rows,
+            intensity_only_rows,
+            gated_rows,
+            final_rows,
+            strict=True,
+        )
     ):
         query_output.append(
             {
@@ -1090,6 +1401,43 @@ def train(config_path: str, section: str) -> dict:
                 **{
                     f"cascade_{metric}": cascade[metric]
                     for metric in METRICS
+                },
+                "v1_ranker_oracle_embedding_rank": v1[
+                    "ranker_oracle_embedding_rank"
+                ],
+                "dino_only_selected_cache_image_name": dino_only[
+                    "selected_cache_image_name"
+                ],
+                "dino_only_ranker_oracle_embedding_rank": dino_only[
+                    "ranker_oracle_embedding_rank"
+                ],
+                **{
+                    f"dino_only_{metric}": dino_only[metric]
+                    for metric in METRICS
+                },
+                "intensity_only_selected_cache_image_name": intensity_only[
+                    "selected_cache_image_name"
+                ],
+                "intensity_only_ranker_oracle_embedding_rank": intensity_only[
+                    "ranker_oracle_embedding_rank"
+                ],
+                **{
+                    f"intensity_only_{metric}": intensity_only[metric]
+                    for metric in METRICS
+                },
+                "v1_sacrifice": f"{tradeoffs[index, 0]:.9f}",
+                "dino_gain": f"{tradeoffs[index, 1]:.9f}",
+                "intensity_gain": f"{tradeoffs[index, 2]:.9f}",
+                "v1_rank_displacement": f"{tradeoffs[index, 3]:.9f}",
+                **{
+                    field: (
+                        f"{progress_features[index, field_index]:.9f}"
+                        if progress_features is not None
+                        else ""
+                    )
+                    for field_index, field in enumerate(
+                        ONLINE_PROGRESS_FIELDS
+                    )
                 },
                 "strict_triple_win_label": str(int(targets[index])),
                 "gate_probability": f"{gate_probabilities[index]:.9f}",
@@ -1193,8 +1541,24 @@ def train(config_path: str, section: str) -> dict:
         candidate_output,
         CANDIDATE_FIELDS,
     )
+    gate_options = gate.get("options", [])
+    best_gate_option = (
+        max(
+            gate_options,
+            key=lambda option: float(
+                option["strict_triple_win_precision"]
+            ),
+        )
+        if gate_options
+        else None
+    )
     report = {
-        "mode": "phase4i_strict_oof_factorized_residual_cascade_v1",
+        "mode": str(
+            cfg.get(
+                "report_mode",
+                "phase4i_strict_oof_factorized_residual_cascade_v1",
+            )
+        ),
         "device": str(device),
         "cascade": {
             "summary": {
@@ -1210,6 +1574,42 @@ def train(config_path: str, section: str) -> dict:
                 "intensity": float(cascade_weights[:, 1].mean()),
             },
         },
+        "counterfactual_ablation": {
+            "definition": (
+                "zero one residual branch while retaining the strict-OOF "
+                "query-conditioned weights learned by the full cascade"
+            ),
+            "dino_only_residual": {
+                "summary": {
+                    "all": metric_summary(dino_only_rows),
+                    "far_probe75_100": metric_summary(
+                        dino_only_rows,
+                        lambda row: int(row["query_probe"]) >= 75,
+                    ),
+                },
+                "vs_v1": dino_only_comparison,
+            },
+            "intensity_only_residual": {
+                "summary": {
+                    "all": metric_summary(intensity_only_rows),
+                    "far_probe75_100": metric_summary(
+                        intensity_only_rows,
+                        lambda row: int(row["query_probe"]) >= 75,
+                    ),
+                },
+                "vs_v1": intensity_only_comparison,
+            },
+            "full_residual": {
+                "summary": {
+                    "all": metric_summary(cascade_rows),
+                    "far_probe75_100": metric_summary(
+                        cascade_rows,
+                        lambda row: int(row["query_probe"]) >= 75,
+                    ),
+                },
+                "vs_v1": cascade_comparison,
+            },
+        },
         "gate": {
             "enabled_by_point_guard": bool(gate["enabled"]),
             "threshold": threshold,
@@ -1219,6 +1619,7 @@ def train(config_path: str, section: str) -> dict:
                 if gate_accepted.any()
                 else 0.0
             ),
+            "best_observed_option": best_gate_option,
             "selection": gate,
         },
         "gated_candidate": {
@@ -1262,6 +1663,12 @@ def train(config_path: str, section: str) -> dict:
             "sealed_final_holdout_rows_read": 0,
             "development_validation_rows_read": 0,
             "hard_candidate_truncation": False,
+            "oracle_rank_definition": (
+                "predicted ranking position of the minimum common "
+                "candidate_tactile_embedding_distance"
+            ),
+            "oracle_rank_source_shared_by_all_strategies": True,
+            "online_progress_features_enabled": use_progress,
         },
         "next_action": (
             "freeze full-development cascade and run independent development validation"
@@ -1272,9 +1679,21 @@ def train(config_path: str, section: str) -> dict:
     write_json(project_path(cfg["metrics_json"]), report)
     print(
         {
-            key: value
-            for key, value in report.items()
-            if key != "training"
+            "mode": report["mode"],
+            "cascade": report["cascade"],
+            "counterfactual_ablation": report[
+                "counterfactual_ablation"
+            ],
+            "gate": {
+                key: value
+                for key, value in report["gate"].items()
+                if key != "selection"
+            },
+            "gated_candidate": report["gated_candidate"],
+            "deployment_accepted": report["deployment_accepted"],
+            "deployed": report["deployed"],
+            "integrity": report["integrity"],
+            "next_action": report["next_action"],
         }
     )
     return report

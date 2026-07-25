@@ -193,6 +193,8 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
             np.asarray([[2], [2]], dtype=np.int32),
             distances,
             {"q.png": "0", "c.png": "1"},
+            np.zeros((2, 36), dtype=np.float32),
+            np.asarray([0.1, 0.2], dtype=np.float32),
         )
         self.assertEqual(len(output), 2)
         self.assertEqual(output[0]["candidate_image_name"], "c.png")
@@ -201,6 +203,8 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
             "0.100000001",
         )
         self.assertNotIn("query_intensity_prediction_mae", output[0])
+        self.assertEqual(output[0]["query_padding_ratio"], "0.100000001")
+        self.assertEqual(output[0]["predicted_ttc"], "0.000000000")
 
     def test_low_capacity_training_smoke(self) -> None:
         rng = np.random.default_rng(3)

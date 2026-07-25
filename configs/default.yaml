@@ -2843,6 +2843,51 @@ phase4i_factorized_residual_cascade_oof_v1:
   maximum_dino_weight: 0.5
   maximum_intensity_weight: 0.5
   initial_weight_logit: -3.0
+  use_online_progress_features: false
+  target_temperature: 0.02
+  score_temperature: 1.0
+  residual_regularization: 0.05
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260726
+  seeds: [20260725, 20260726, 20260727]
+  gate_epochs: 80
+  gate_early_stopping_patience: 10
+  gate_learning_rate: 0.001
+  gate_weight_decay: 0.001
+  gate_inner_split_seed: 20260727
+  minimum_gate_coverage: 0.1
+  minimum_gate_precision: 0.8
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i1_factorized_residual_diagnostics_oof_v1:
+  # Corrected common-oracle metrics, residual counterfactuals, and an
+  # online-safe progress/risk gate. This never overwrites Phase4I outputs.
+  report_mode: phase4i1_corrected_oracle_counterfactual_gate_oof_v1
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  factor_candidate_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  cascade_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i1_factorized_residual_diagnostics_oof_v1/cascade_checkpoints
+  gate_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i1_factorized_residual_diagnostics_oof_v1/gate_checkpoints
+  query_output_csv: outputs/cache/phase4i1_factorized_residual_diagnostics_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4i1_factorized_residual_diagnostics_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4i1_factorized_residual_diagnostics_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  maximum_dino_weight: 0.5
+  maximum_intensity_weight: 0.5
+  initial_weight_logit: -3.0
+  use_online_progress_features: true
   target_temperature: 0.02
   score_temperature: 1.0
   residual_regularization: 0.05

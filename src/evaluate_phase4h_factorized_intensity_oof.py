@@ -70,6 +70,16 @@ FACTOR_CANDIDATE_FIELDS = [
     "query_image_name",
     "query_probe",
     "oof_fold",
+    "predicted_ttc",
+    "ttc_entropy",
+    "trajectory_stability",
+    "motion_speed",
+    "motion_cumulative",
+    "trajectory_real_fraction",
+    "trajectory_history_fraction",
+    "trajectory_padding_ratio",
+    "trajectory_max_gap_fraction",
+    "query_padding_ratio",
     "candidate_rank",
     "v1_score",
     "dino_rank",
@@ -807,6 +817,8 @@ def build_factor_candidate_output(
     oracle_embedding_ranks: np.ndarray,
     predicted_distances: dict[str, np.ndarray],
     fold_by_name: dict[str, str],
+    motion: np.ndarray,
+    query_padding: np.ndarray,
 ) -> list[dict[str, str]]:
     """Export online candidate signals plus offline labels for Phase4I."""
     output = []
@@ -821,6 +833,24 @@ def build_factor_candidate_output(
                     "query_image_name": query_name,
                     "query_probe": query["probe"],
                     "oof_fold": fold_by_name[query_name],
+                    "predicted_ttc": f"{motion[query_index, 25] * 100.0:.9f}",
+                    "ttc_entropy": f"{motion[query_index, 26]:.9f}",
+                    "trajectory_stability": f"{motion[query_index, 18]:.9f}",
+                    "motion_speed": f"{motion[query_index, 17]:.9f}",
+                    "motion_cumulative": f"{motion[query_index, 19]:.9f}",
+                    "trajectory_real_fraction": (
+                        f"{motion[query_index, 20]:.9f}"
+                    ),
+                    "trajectory_history_fraction": (
+                        f"{motion[query_index, 21]:.9f}"
+                    ),
+                    "trajectory_padding_ratio": (
+                        f"{motion[query_index, 22]:.9f}"
+                    ),
+                    "trajectory_max_gap_fraction": (
+                        f"{motion[query_index, 23]:.9f}"
+                    ),
+                    "query_padding_ratio": f"{query_padding[query_index]:.9f}",
                     "candidate_rank": v1_row["candidate_rank"],
                     "v1_score": v1_row["candidate_score"],
                     "dino_rank": str(
@@ -902,7 +932,7 @@ def evaluate(config_path: str, section: str) -> dict:
         raise RuntimeError(f"Phase4H.2 requires exactly three OOF folds, got {folds}")
 
     recipe_name, feature_path = load_frontier(project_path(cfg["frontier_json"]))
-    visual, _ = load_feature_cache(feature_path, names)
+    visual, query_padding = load_feature_cache(feature_path, names)
     motion = build_online_motion(rows, predictions, cfg)
     shape_raw, intensity_raw, touch_cache = build_or_load_factor_index(rows, cfg)
     if shape_raw.shape != (len(rows), SHAPE_DIM):
@@ -1340,6 +1370,8 @@ def evaluate(config_path: str, section: str) -> dict:
         oracle_embedding_ranks,
         predicted_distances,
         fold_by_name,
+        motion,
+        query_padding,
     )
     write_csv_rows(
         project_path(cfg["candidate_output_csv"]),

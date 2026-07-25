@@ -10,14 +10,20 @@ import torch
 
 from src.train_phase4i_factorized_residual_cascade import (
     FactorizedResidualCascade,
+    ONLINE_PROGRESS_FIELDS,
     build_gate_oof_splits,
     cascade_feature_names,
     cascade_query_features,
+    consistent_reference_rows,
     gate_feature_names,
     gate_features,
     normalized_entropy,
+    online_progress_features,
     predict_cascade,
     query_standardize,
+    rank_positions,
+    residual_counterfactual_scores,
+    selected_score_tradeoffs,
     strict_triple_labels,
     train_cascade,
 )
@@ -81,6 +87,121 @@ class Phase4IFactorizedResidualCascadeTests(unittest.TestCase):
                 normalized_entropy(v1) <= 1,
             ).all()
         )
+
+    def test_progress_features_expand_cascade_and_gate_without_probe(self) -> None:
+        rng = np.random.default_rng(19)
+        v1 = query_standardize(rng.normal(size=(4, 8)).astype(np.float32))
+        dino = query_standardize(rng.normal(size=(4, 8)).astype(np.float32))
+        intensity = query_standardize(
+            rng.normal(size=(4, 8)).astype(np.float32)
+        )
+        progress = rng.normal(
+            size=(4, len(ONLINE_PROGRESS_FIELDS))
+        ).astype(np.float32)
+        cascade_features = cascade_query_features(
+            v1,
+            dino,
+            intensity,
+            progress,
+        )
+        weights = np.full((4, 2), [0.1, 0.2], dtype=np.float32)
+        scores = residual_counterfactual_scores(
+            {"v1": v1, "dino": dino, "intensity": intensity},
+            weights,
+        )["full"]
+        safety_features = gate_features(
+            {"v1": v1, "dino": dino, "intensity": intensity},
+            scores,
+            weights,
+            progress,
+        )
+        self.assertEqual(
+            cascade_features.shape,
+            (4, len(cascade_feature_names(True))),
+        )
+        self.assertEqual(
+            safety_features.shape,
+            (4, len(gate_feature_names(True))),
+        )
+        self.assertNotIn("query_probe", cascade_feature_names(True))
+        self.assertNotIn("query_probe", gate_feature_names(True))
+
+    def test_counterfactual_scores_decompose_full_residual(self) -> None:
+        arrays = {
+            "v1": np.asarray([[0.0, 1.0]], dtype=np.float32),
+            "dino": np.asarray([[2.0, -2.0]], dtype=np.float32),
+            "intensity": np.asarray([[-1.0, 1.0]], dtype=np.float32),
+        }
+        weights = np.asarray([[0.25, 0.5]], dtype=np.float32)
+        scores = residual_counterfactual_scores(arrays, weights)
+        self.assertTrue(
+            np.allclose(scores["full"], [[0.0, 1.0]])
+        )
+        self.assertTrue(
+            np.allclose(
+                scores["full"],
+                scores["dino_only"]
+                + scores["intensity_only"]
+                - arrays["v1"],
+            )
+        )
+        tradeoffs = selected_score_tradeoffs(
+            arrays,
+            scores["full"],
+            weights,
+        )
+        self.assertEqual(tradeoffs.shape, (1, 9))
+
+    def test_common_oracle_rank_is_model_position_of_best_target(self) -> None:
+        query = {
+            "query_image_name": "q.png",
+            "selected_cache_image_name": "a.png",
+            "ranker_oracle_embedding_rank": "99",
+        }
+        groups = {
+            "q.png": [
+                {
+                    "candidate_image_name": "a.png",
+                    "candidate_tactile_embedding_distance": "0.30",
+                },
+                {
+                    "candidate_image_name": "b.png",
+                    "candidate_tactile_embedding_distance": "0.10",
+                },
+                {
+                    "candidate_image_name": "c.png",
+                    "candidate_tactile_embedding_distance": "0.20",
+                },
+            ]
+        }
+        scores = np.asarray([[0.0, 0.8, 0.4]], dtype=np.float32)
+        reference = consistent_reference_rows([query], groups, scores)
+        self.assertEqual(reference[0]["ranker_oracle_embedding_rank"], "3")
+        self.assertTrue(
+            np.array_equal(
+                rank_positions(scores[0]),
+                np.asarray([1, 3, 2], dtype=np.int32),
+            )
+        )
+
+    def test_online_progress_loader_requires_candidate_consistency(self) -> None:
+        row = {
+            field: str(index + 0.5)
+            for index, field in enumerate(ONLINE_PROGRESS_FIELDS)
+        }
+        second = dict(row)
+        values = online_progress_features(
+            {"q.png": [row, second]},
+            ["q.png"],
+        )
+        self.assertEqual(values.shape, (1, len(ONLINE_PROGRESS_FIELDS)))
+        self.assertEqual(values[0, 0], 0.5)
+        second["predicted_ttc"] = "999"
+        with self.assertRaisesRegex(RuntimeError, "inconsistent"):
+            online_progress_features(
+                {"q.png": [row, second]},
+                ["q.png"],
+            )
 
     def test_online_interfaces_do_not_accept_future_tactile_or_probe(self) -> None:
         forward_parameters = set(
