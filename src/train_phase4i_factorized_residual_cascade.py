@@ -699,6 +699,11 @@ def build_cascade_query_rows(
     touch_cache: dict[str, np.ndarray] = {}
     output = []
     for index, query in enumerate(query_rows):
+        if index % 250 == 0:
+            print(
+                f"phase4i tactile evaluation: {index}/{len(query_rows)} queries",
+                flush=True,
+            )
         group = groups[query["query_image_name"]]
         choice = int(choices[index])
         candidate = group[choice]
@@ -740,6 +745,10 @@ def build_cascade_query_rows(
                 },
             }
         )
+    print(
+        f"phase4i tactile evaluation: {len(query_rows)}/{len(query_rows)} queries",
+        flush=True,
+    )
     return output
 
 
@@ -889,6 +898,10 @@ def train(config_path: str, section: str) -> dict:
             raise RuntimeError(f"Phase4I fold {fold} inner split is empty")
         seed_scores, seed_weights = [], []
         for seed in seeds:
+            print(
+                f"phase4i cascade fold {fold} seed {seed}: training",
+                flush=True,
+            )
             set_seed(seed)
             checkpoint_path = (
                 cascade_checkpoint_dir / f"fold_{fold}_seed_{seed}.pt"
@@ -923,6 +936,12 @@ def train(config_path: str, section: str) -> dict:
             seed_weights.append(weights)
             cascade_reports.append(
                 {"fold": fold, "seed": seed, **report}
+            )
+            print(
+                f"phase4i cascade fold {fold} seed {seed}: "
+                f"best_epoch={report['best_epoch']} "
+                f"validation_loss={report['best_validation_loss']:.6f}",
+                flush=True,
             )
         cascade_scores[held_out] = np.mean(seed_scores, axis=0)
         cascade_weights[held_out] = np.mean(seed_weights, axis=0)
@@ -961,6 +980,7 @@ def train(config_path: str, section: str) -> dict:
             held_out = split["held_out"]
             inner_fit = split["inner_fit"]
             inner_validation = split["inner_validation"]
+            print(f"phase4i gate fold {fold}: training", flush=True)
             checkpoint_path = gate_checkpoint_dir / f"fold_{fold}.pt"
             model, report = train_linear_gate(
                 raw_gate_features,
@@ -985,6 +1005,12 @@ def train(config_path: str, section: str) -> dict:
                 checkpoint_path,
             )
             gate_reports.append({"fold": fold, **report})
+            print(
+                f"phase4i gate fold {fold}: "
+                f"best_epoch={report['best_epoch']} "
+                f"validation_loss={report['best_validation_loss']:.6f}",
+                flush=True,
+            )
         gate_probabilities = 1.0 / (
             1.0 + np.exp(-np.clip(gate_logits, -60.0, 60.0))
         )
@@ -997,6 +1023,10 @@ def train(config_path: str, section: str) -> dict:
             float(cfg["minimum_gate_precision"]),
         )
     else:
+        print(
+            f"phase4i gate disabled safely: {gate_block_reason}",
+            flush=True,
+        )
         gate_probabilities = np.zeros(len(query_rows), dtype=np.float32)
         gate = {
             "enabled": False,
@@ -1016,6 +1046,7 @@ def train(config_path: str, section: str) -> dict:
         "bootstrap_iterations": int(cfg["bootstrap_iterations"]),
         "bootstrap_seed": int(cfg["bootstrap_seed"]),
     }
+    print("phase4i: starting vectorized record bootstrap", flush=True)
     cascade_comparison = fast_bootstrap_comparison(
         query_rows,
         cascade_rows,
