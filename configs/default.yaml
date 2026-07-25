@@ -2783,3 +2783,40 @@ phase4h_tactile_hard_case_mining_v1:
   repeats_per_region: 3
   hard_negative_pairs_per_new_record: 2
   maximum_debug_cases: 100
+
+phase4h_factorized_intensity_oof_v1:
+  # Phase4H failure branch: diagnose shape/intensity observability on strict OOF only.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  ttc_predictions_csv: ""
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  factor_index_npz: /mnt/data/cheng/haptic-cache/phase4h_factorized_intensity_oof_v1/factor_index.npz
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_factorized_intensity_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_queries.csv
+  metrics_json: outputs/metrics/phase4h_factorized_intensity_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  hidden_dim: 32
+  dropout: 0.2
+  batch_size: 64
+  epochs: 50
+  early_stopping_patience: 8
+  learning_rate: 0.0003
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260725
+  seeds: [20260725, 20260726, 20260727]
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
