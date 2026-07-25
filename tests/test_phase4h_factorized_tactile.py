@@ -10,6 +10,8 @@ import torch
 
 from src.evaluate_phase4h_factorized_intensity_oof import (
     bootstrap_prediction_error,
+    fast_bootstrap_comparison,
+    load_compatible_regressor_checkpoint,
     predict_regressor,
     select_from_shortlist,
     train_regressor,
@@ -80,6 +82,47 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
         self.assertLess(result["all"]["bootstrap_95_ci"][1], 0)
         self.assertLess(result["far_probe75_100"]["bootstrap_95_ci"][1], 0)
 
+    def test_fast_retrieval_bootstrap_detects_consistent_improvement(self) -> None:
+        base, improved = [], []
+        for index in range(20):
+            common = {
+                "query_image_name": f"image_{index:05d}.png",
+                "query_record_id": f"rec_{index:05d}",
+                "query_probe": "100",
+            }
+            base.append(
+                {
+                    **common,
+                    "tactile_diff_mae": "0.020",
+                    "tactile_ssim": "0.700",
+                    "tactile_mask_iou": "0.200",
+                    "ranker_oracle_embedding_rank": "2",
+                }
+            )
+            improved.append(
+                {
+                    **common,
+                    "tactile_diff_mae": "0.010",
+                    "tactile_ssim": "0.800",
+                    "tactile_mask_iou": "0.300",
+                    "ranker_oracle_embedding_rank": "1",
+                }
+            )
+        result = fast_bootstrap_comparison(
+            base,
+            improved,
+            {"bootstrap_iterations": 100, "bootstrap_seed": 7},
+        )
+        self.assertTrue(result["accepted"])
+        self.assertLess(
+            result["all"]["bootstrap_95_ci"]["tactile_diff_mae"][1],
+            0,
+        )
+        self.assertGreaterEqual(
+            result["far_probe75_100"]["bootstrap_95_ci"]["tactile_mask_iou"][0],
+            0,
+        )
+
     def test_low_capacity_training_smoke(self) -> None:
         rng = np.random.default_rng(3)
         features = rng.normal(size=(16, 5)).astype(np.float32)
@@ -100,6 +143,18 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
         }
         torch.manual_seed(3)
         with tempfile.TemporaryDirectory() as directory:
+            checkpoint_path = Path(directory) / "best.pt"
+            metadata = {
+                "scope": "unit-test",
+                "predictor": "dino_only",
+                "fold": "0",
+                "seed": 3,
+                "primary_recipe": "unit",
+                "feature_mean": np.zeros(5, dtype=np.float32),
+                "feature_std": np.ones(5, dtype=np.float32),
+                "intensity_mean": np.zeros(INTENSITY_DIM, dtype=np.float32),
+                "intensity_std": np.ones(INTENSITY_DIM, dtype=np.float32),
+            }
             model, report = train_regressor(
                 features,
                 targets,
@@ -108,8 +163,8 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
                 rows,
                 config,
                 torch.device("cpu"),
-                Path(directory) / "best.pt",
-                {"scope": "unit-test"},
+                checkpoint_path,
+                metadata,
             )
             prediction = predict_regressor(
                 model,
@@ -118,9 +173,17 @@ class Phase4HFactorizedTactileTests(unittest.TestCase):
                 batch_size=2,
                 device=torch.device("cpu"),
             )
+            reused = load_compatible_regressor_checkpoint(
+                checkpoint_path,
+                features.shape[1],
+                config,
+                metadata,
+                torch.device("cpu"),
+            )
         self.assertEqual(prediction.shape, (4, INTENSITY_DIM))
         self.assertGreaterEqual(report["best_epoch"], 1)
         self.assertTrue(np.isfinite(prediction).all())
+        self.assertIsNotNone(reused)
 
 
 if __name__ == "__main__":

@@ -2818,5 +2818,7 @@ phase4h_factorized_intensity_oof_v1:
   inner_validation_fraction: 0.1
   inner_split_seed: 20260725
   seeds: [20260725, 20260726, 20260727]
+  reuse_compatible_checkpoints: true
+  reuse_complete_query_output: true
   bootstrap_iterations: 2000
   bootstrap_seed: 20260725

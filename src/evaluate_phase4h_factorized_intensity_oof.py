@@ -12,7 +12,6 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .build_phase4g_dino_v1_fusion import bootstrap_comparison
 from .config import load_config, project_path
 from .evaluate_oracle_tactile_retrieval import tactile_difference, tactile_metrics
 from .phase4h_dino_adaptation import (
@@ -277,7 +276,58 @@ def train_regressor(
         "best_validation_loss": best_loss,
         "epochs_ran": len(history),
         "history": history,
+        "reused_checkpoint": False,
     }
+
+
+def load_compatible_regressor_checkpoint(
+    checkpoint_path: Path,
+    input_dim: int,
+    cfg: dict,
+    metadata: dict,
+    device: torch.device,
+) -> LowCapacityIntensityRegressor | None:
+    """Load a completed model only when its OOF identity and statistics match."""
+    if not checkpoint_path.is_file():
+        return None
+    try:
+        checkpoint = torch.load(
+            checkpoint_path,
+            map_location=device,
+            weights_only=False,
+        )
+        if int(checkpoint.get("input_dim", -1)) != input_dim:
+            return None
+        saved_metadata = checkpoint.get("metadata", {})
+        for key in ("scope", "predictor", "fold", "seed", "primary_recipe"):
+            if saved_metadata.get(key) != metadata.get(key):
+                return None
+        for key in (
+            "feature_mean",
+            "feature_std",
+            "intensity_mean",
+            "intensity_std",
+        ):
+            saved = np.asarray(saved_metadata.get(key), dtype=np.float32)
+            expected = np.asarray(metadata.get(key), dtype=np.float32)
+            if saved.shape != expected.shape or not np.allclose(
+                saved,
+                expected,
+                rtol=1e-6,
+                atol=1e-7,
+            ):
+                return None
+        model = LowCapacityIntensityRegressor(
+            input_dim,
+            int(cfg["hidden_dim"]),
+            INTENSITY_DIM,
+            float(cfg["dropout"]),
+        ).to(device)
+        model.load_state_dict(checkpoint["model_state"])
+        model.eval()
+        return model
+    except (EOFError, KeyError, OSError, RuntimeError, TypeError, ValueError):
+        return None
 
 
 def predict_regressor(
@@ -383,10 +433,6 @@ def bootstrap_prediction_error(
     iterations: int,
     seed: int,
 ) -> dict:
-    names_by_record: dict[str, list[int]] = defaultdict(list)
-    for index, row in enumerate(rows):
-        names_by_record[row["record_id"]].append(index)
-    records = sorted(names_by_record)
     rng = np.random.default_rng(seed)
     output = {}
     for regime, selected in (
@@ -399,33 +445,30 @@ def bootstrap_prediction_error(
             ),
         ),
     ):
-        selected_set = set(selected.tolist())
-        eligible_records = [
-            record
-            for record in records
-            if any(index in selected_set for index in names_by_record[record])
-        ]
-        if not eligible_records:
+        if not len(selected):
             raise RuntimeError(f"No records are available for prediction regime {regime}")
         deltas = prediction_error[selected] - baseline_error[selected]
-        samples = []
-        for _ in range(iterations):
-            draw = rng.choice(
-                eligible_records,
-                len(eligible_records),
-                replace=True,
-            )
-            indices = [
-                index
-                for record in draw
-                for index in names_by_record[record]
-                if index in selected_set
-            ]
-            samples.append(
-                float(
-                    np.mean(prediction_error[indices] - baseline_error[indices])
-                )
-            )
+        selected_records = np.asarray(
+            [rows[int(index)]["record_id"] for index in selected]
+        )
+        records, record_indices = np.unique(
+            selected_records,
+            return_inverse=True,
+        )
+        counts = np.bincount(record_indices, minlength=len(records)).astype(
+            np.float64
+        )
+        sums = np.bincount(
+            record_indices,
+            weights=deltas.astype(np.float64),
+            minlength=len(records),
+        )
+        draws = rng.integers(
+            0,
+            len(records),
+            size=(iterations, len(records)),
+        )
+        samples = sums[draws].sum(axis=1) / counts[draws].sum(axis=1)
         output[regime] = {
             "queries": len(selected),
             "mean_error_delta_vs_global_median": float(deltas.mean()),
@@ -443,8 +486,210 @@ def bootstrap_prediction_error(
     return output
 
 
+def _retrieval_metric_matrix(
+    rows: list[dict[str, str]],
+) -> np.ndarray:
+    return np.asarray(
+        [
+            [
+                float(row["tactile_diff_mae"]),
+                float(row["tactile_ssim"]),
+                float(row["tactile_mask_iou"]),
+                float(int(row["ranker_oracle_embedding_rank"]) == 1),
+            ]
+            for row in rows
+        ],
+        dtype=np.float64,
+    )
+
+
+def _retrieval_metric_values(values: np.ndarray) -> dict[str, float]:
+    means = values.mean(axis=0)
+    return {
+        "queries": float(len(values)),
+        "tactile_diff_mae": float(means[0]),
+        "tactile_ssim": float(means[1]),
+        "tactile_mask_iou": float(means[2]),
+        "oracle_top1": float(means[3]),
+    }
+
+
+def fast_bootstrap_comparison(
+    v1_rows: list[dict[str, str]],
+    current_rows: list[dict[str, str]],
+    cfg: dict,
+) -> dict:
+    """Record bootstrap equivalent to Phase4G without Python query loops."""
+    v1_by_name = {row["query_image_name"]: row for row in v1_rows}
+    current_by_name = {row["query_image_name"]: row for row in current_rows}
+    if (
+        len(v1_by_name) != len(v1_rows)
+        or len(current_by_name) != len(current_rows)
+        or set(v1_by_name) != set(current_by_name)
+    ):
+        raise RuntimeError(
+            "Bootstrap requires one-to-one V1 and current retrieval queries."
+        )
+    ordered_names = list(v1_by_name)
+    base_values = _retrieval_metric_matrix(
+        [v1_by_name[name] for name in ordered_names]
+    )
+    current_values = _retrieval_metric_matrix(
+        [current_by_name[name] for name in ordered_names]
+    )
+    records = np.asarray(
+        [v1_by_name[name]["query_record_id"] for name in ordered_names]
+    )
+    probes = np.asarray(
+        [int(v1_by_name[name]["query_probe"]) for name in ordered_names]
+    )
+    all_records = np.unique(records)
+    record_lookup = {
+        record_id: index for index, record_id in enumerate(all_records)
+    }
+    metric_names = (
+        "tactile_diff_mae",
+        "tactile_ssim",
+        "tactile_mask_iou",
+        "oracle_top1",
+    )
+    rng = np.random.default_rng(int(cfg["bootstrap_seed"]))
+    output = {}
+    for regime, selected in (
+        ("all", np.ones(len(ordered_names), dtype=bool)),
+        ("far_probe75_100", probes >= 75),
+    ):
+        if not selected.any():
+            raise RuntimeError(f"No queries are available for retrieval regime {regime}")
+        regime_base = base_values[selected]
+        regime_current = current_values[selected]
+        regime_records = records[selected]
+        record_indices = np.asarray(
+            [record_lookup[record_id] for record_id in regime_records],
+            dtype=np.int32,
+        )
+        counts = np.bincount(
+            record_indices,
+            minlength=len(all_records),
+        ).astype(np.float64)
+        base_sums = np.stack(
+            [
+                np.bincount(
+                    record_indices,
+                    weights=regime_base[:, column],
+                    minlength=len(all_records),
+                )
+                for column in range(regime_base.shape[1])
+            ],
+            axis=1,
+        )
+        current_sums = np.stack(
+            [
+                np.bincount(
+                    record_indices,
+                    weights=regime_current[:, column],
+                    minlength=len(all_records),
+                )
+                for column in range(regime_current.shape[1])
+            ],
+            axis=1,
+        )
+        draws = rng.integers(
+            0,
+            len(all_records),
+            size=(int(cfg["bootstrap_iterations"]), len(all_records)),
+        )
+        denominators = counts[draws].sum(axis=1, keepdims=True)
+        if (denominators == 0).any():
+            raise RuntimeError(
+                f"Record bootstrap drew no queries for retrieval regime {regime}"
+            )
+        samples = (
+            current_sums[draws].sum(axis=1) - base_sums[draws].sum(axis=1)
+        ) / denominators
+        base = _retrieval_metric_values(regime_base)
+        current = _retrieval_metric_values(regime_current)
+        deltas = {
+            metric: current[metric] - base[metric] for metric in metric_names
+        }
+        ci = {
+            metric: [
+                float(np.quantile(samples[:, column], 0.025)),
+                float(np.quantile(samples[:, column], 0.975)),
+            ]
+            for column, metric in enumerate(metric_names)
+        }
+        point_pass = bool(
+            current["tactile_diff_mae"] < base["tactile_diff_mae"]
+            and current["tactile_ssim"] >= base["tactile_ssim"]
+            and current["tactile_mask_iou"] >= base["tactile_mask_iou"]
+            and current["oracle_top1"] >= base["oracle_top1"]
+        )
+        ci_pass = bool(
+            ci["tactile_diff_mae"][1] < 0
+            and ci["tactile_ssim"][0] >= 0
+            and ci["tactile_mask_iou"][0] >= 0
+        )
+        output[regime] = {
+            "v1": base,
+            "fusion": current,
+            "delta_fusion_minus_v1": deltas,
+            "bootstrap_95_ci": ci,
+            "point_pass": point_pass,
+            "ci_pass": ci_pass,
+        }
+    output["accepted"] = bool(
+        output["all"]["point_pass"]
+        and output["all"]["ci_pass"]
+        and output["far_probe75_100"]["point_pass"]
+        and output["far_probe75_100"]["ci_pass"]
+    )
+    return output
+
+
 def choices_from_distance(distances: np.ndarray) -> np.ndarray:
     return distances.argmin(axis=1).astype(np.int32)
+
+
+def load_compatible_query_output(
+    output_path: Path,
+    strategy_choices: dict[str, tuple[str, int | None, np.ndarray]],
+    rows: list[dict[str, str]],
+    candidates: np.ndarray,
+) -> dict[str, list[dict[str, str]]] | None:
+    """Reuse completed tactile evaluations after verifying every selected pair."""
+    if not output_path.is_file():
+        return None
+    try:
+        cached = read_csv_rows(output_path)
+    except (OSError, ValueError):
+        return None
+    grouped: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in cached:
+        grouped[row.get("strategy", "")].append(row)
+    if set(grouped) != set(strategy_choices):
+        return None
+    names = [row["image_name"] for row in rows]
+    output = {}
+    for strategy, (predictor, shortlist, choices) in strategy_choices.items():
+        by_name = {
+            row["query_image_name"]: row for row in grouped[strategy]
+        }
+        if len(by_name) != len(grouped[strategy]) or set(by_name) != set(names):
+            return None
+        ordered = [by_name[name] for name in names]
+        for index, cached_row in enumerate(ordered):
+            selected_index = int(candidates[index, int(choices[index])])
+            if (
+                cached_row["selected_cache_image_name"]
+                != rows[selected_index]["image_name"]
+                or cached_row["predictor"] != predictor
+                or cached_row["shortlist_k"]
+                != ("" if shortlist is None else str(shortlist))
+            ):
+                return None
+        output[strategy] = ordered
+    return output
 
 
 def build_query_output(
@@ -748,29 +993,51 @@ def evaluate(config_path: str, section: str) -> dict:
             seed_predictions = []
             for seed in seeds:
                 set_seed(seed)
-                model, report = train_regressor(
-                    features,
-                    intensity_standardized,
-                    inner_fit,
-                    inner_validation,
-                    rows,
-                    cfg,
-                    device,
-                    checkpoint_dir / f"{predictor}_fold_{fold}_seed_{seed}.pt",
-                    {
-                        "scope": "strict_oof_factorized_intensity",
-                        "predictor": predictor,
-                        "fold": fold,
-                        "seed": seed,
-                        "primary_recipe": recipe_name,
-                        "feature_mean": feature_mean,
-                        "feature_std": feature_std,
-                        "intensity_mean": intensity_mean,
-                        "intensity_std": intensity_std,
-                        "query_true_probe_used": False,
-                        "query_tactile_input": False,
-                    },
+                checkpoint_path = (
+                    checkpoint_dir / f"{predictor}_fold_{fold}_seed_{seed}.pt"
                 )
+                checkpoint_metadata = {
+                    "scope": "strict_oof_factorized_intensity",
+                    "predictor": predictor,
+                    "fold": fold,
+                    "seed": seed,
+                    "primary_recipe": recipe_name,
+                    "feature_mean": feature_mean,
+                    "feature_std": feature_std,
+                    "intensity_mean": intensity_mean,
+                    "intensity_std": intensity_std,
+                    "query_true_probe_used": False,
+                    "query_tactile_input": False,
+                }
+                model = None
+                if bool(cfg.get("reuse_compatible_checkpoints", False)):
+                    model = load_compatible_regressor_checkpoint(
+                        checkpoint_path,
+                        features.shape[1],
+                        cfg,
+                        checkpoint_metadata,
+                        device,
+                    )
+                if model is None:
+                    model, report = train_regressor(
+                        features,
+                        intensity_standardized,
+                        inner_fit,
+                        inner_validation,
+                        rows,
+                        cfg,
+                        device,
+                        checkpoint_path,
+                        checkpoint_metadata,
+                    )
+                else:
+                    report = {
+                        "best_epoch": None,
+                        "best_validation_loss": None,
+                        "epochs_ran": 0,
+                        "history": [],
+                        "reused_checkpoint": True,
+                    }
                 seed_predictions.append(
                     predict_regressor(
                         model,
@@ -788,13 +1055,21 @@ def evaluate(config_path: str, section: str) -> dict:
                         **report,
                     }
                 )
-                print(
-                    "phase4h.2 "
-                    f"predictor={predictor} fold={fold} seed={seed} "
-                    f"best_epoch={report['best_epoch']} "
-                    f"best_val={report['best_validation_loss']:.6f}",
-                    flush=True,
-                )
+                if report["reused_checkpoint"]:
+                    print(
+                        "phase4h.2 "
+                        f"predictor={predictor} fold={fold} seed={seed} "
+                        "checkpoint=reused",
+                        flush=True,
+                    )
+                else:
+                    print(
+                        "phase4h.2 "
+                        f"predictor={predictor} fold={fold} seed={seed} "
+                        f"best_epoch={report['best_epoch']} "
+                        f"best_val={report['best_validation_loss']:.6f}",
+                        flush=True,
+                    )
             predicted[predictor][held_out] = np.mean(
                 seed_predictions,
                 axis=0,
@@ -905,39 +1180,57 @@ def evaluate(config_path: str, section: str) -> dict:
 
     if not touch_cache:
         touch_cache = {}
-    strategy_rows: dict[str, list[dict[str, str]]] = {}
-    all_query_output = []
-    metric_cache: dict[tuple[int, int], dict[str, float]] = {}
-    for strategy, (predictor, shortlist, choices) in strategy_choices.items():
-        output = build_query_output(
-            strategy,
-            predictor,
-            shortlist,
-            choices,
+    query_output_path = project_path(cfg["query_output_csv"])
+    strategy_rows = None
+    if bool(cfg.get("reuse_complete_query_output", False)):
+        strategy_rows = load_compatible_query_output(
+            query_output_path,
+            strategy_choices,
             rows,
             candidates,
-            oracle_embedding_ranks,
-            shape_distances,
-            intensity_distances,
-            predicted_distances,
-            prediction_errors,
-            prediction_errors["global_median"],
-            fold_by_name,
-            touch_cache,
-            metric_cache,
-            cfg,
         )
-        strategy_rows[strategy] = output
-        all_query_output.extend(output)
-        print(
-            {
-                "strategy": strategy,
-                "summary": summarize(output),
-            },
-            flush=True,
-        )
-    write_csv_rows(project_path(cfg["query_output_csv"]), all_query_output, QUERY_FIELDS)
+    if strategy_rows is not None:
+        print(f"phase4h.2: reusing {query_output_path}", flush=True)
+        for strategy, output in strategy_rows.items():
+            print(
+                {"strategy": strategy, "summary": summarize(output)},
+                flush=True,
+            )
+    else:
+        strategy_rows = {}
+        all_query_output = []
+        metric_cache: dict[tuple[int, int], dict[str, float]] = {}
+        for strategy, (predictor, shortlist, choices) in strategy_choices.items():
+            output = build_query_output(
+                strategy,
+                predictor,
+                shortlist,
+                choices,
+                rows,
+                candidates,
+                oracle_embedding_ranks,
+                shape_distances,
+                intensity_distances,
+                predicted_distances,
+                prediction_errors,
+                prediction_errors["global_median"],
+                fold_by_name,
+                touch_cache,
+                metric_cache,
+                cfg,
+            )
+            strategy_rows[strategy] = output
+            all_query_output.extend(output)
+            print(
+                {
+                    "strategy": strategy,
+                    "summary": summarize(output),
+                },
+                flush=True,
+            )
+        write_csv_rows(query_output_path, all_query_output, QUERY_FIELDS)
 
+    print("phase4h.2: starting vectorized record bootstrap", flush=True)
     prediction_summary = {}
     for predictor in predictors:
         comparison = bootstrap_prediction_error(
@@ -983,7 +1276,7 @@ def evaluate(config_path: str, section: str) -> dict:
             "vs_v1": (
                 {"accepted": True, "identity": True}
                 if strategy == "v1"
-                else bootstrap_comparison(v1_reference, output, comparison_cfg)
+                else fast_bootstrap_comparison(v1_reference, output, comparison_cfg)
             ),
         }
     deployable_strategies = [
