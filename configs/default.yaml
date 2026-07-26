@@ -3023,3 +3023,51 @@ phase4i4_far_risk_gate_oof_v1:
   minimum_near_mid_retention: 0.5
   bootstrap_iterations: 2000
   bootstrap_seed: 20260725
+
+phase4i5_temporal_progress_oof_v1:
+  # Four online frames add visual approach cues missing from scalar TTC/motion.
+  # True probe is used only for offline progress/TTC supervision and evaluation.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  feature_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/temporal_dino
+  feature_metrics_json: outputs/metrics/phase4i5_temporal_dino_features_v1.json
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i5_temporal_progress_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i5_temporal_progress_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i5_temporal_progress_oof_v1.json
+  frame_offsets: [-15, -10, -5, 0]
+  crop_size: 192
+  maximum_missing_frame_fraction: 0.0
+  minimum_valid_frames: 4
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  dino_layer: 12
+  center_sigma: 0.35
+  batch_size: 32
+  projection_dim: 128
+  hidden_dim: 64
+  dropout: 0.1
+  near_probe_maximum: 20
+  mid_probe_maximum: 50
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_loss_weight: 0.5
+  ordinal_loss_weight: 0.25
+  threshold_calibration_fraction: 0.1
+  threshold_calibration_seed: 20260731
+  early_stop_fraction: 0.1
+  early_stop_seed: 20260801
+  seeds: [20260725, 20260726, 20260727]
+  train_batch_size: 64
+  epochs: 60
+  early_stopping_patience: 10
+  learning_rate: 0.0003
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
