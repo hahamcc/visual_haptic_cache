@@ -2995,3 +2995,31 @@ phase4i3_monotonic_ttc_scale_oof_v1:
   maximum_diagnostic_records: 100
   bootstrap_iterations: 2000
   bootstrap_seed: 20260725
+
+phase4i4_far_risk_gate_oof_v1:
+  # Predict whether the deployable current state is actually far from contact.
+  # True probe is an offline binary target only and is never an input feature.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i4_far_risk_gate_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i4_far_risk_gate_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i4_far_risk_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i4_far_risk_gate_oof_v1.json
+  far_probe_minimum: 75
+  threshold_calibration_fraction: 0.1
+  threshold_calibration_seed: 20260729
+  early_stop_fraction: 0.1
+  early_stop_seed: 20260730
+  seeds: [20260725, 20260726, 20260727]
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 12
+  learning_rate: 0.01
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
