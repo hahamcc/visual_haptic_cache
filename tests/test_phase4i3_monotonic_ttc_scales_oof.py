@@ -5,6 +5,8 @@ import unittest
 import numpy as np
 
 from src.select_phase4i3_monotonic_ttc_scales_oof import (
+    RECORD_FIELDS,
+    SLICE_FIELDS,
     SCALE_FIELDS,
     apply_group_scales,
     choose_scale,
@@ -169,6 +171,12 @@ class Phase4I3MonotonicTTScaleTests(unittest.TestCase):
         )
         self.assertEqual(len(records), 2)
         self.assertEqual(report["query_count"], 4)
+        self.assertTrue(
+            all(set(row) == set(SLICE_FIELDS) for row in slices)
+        )
+        self.assertTrue(
+            all(set(row) == set(RECORD_FIELDS) for row in records)
+        )
 
     def test_scale_csv_schema_uses_full_metric_names(self) -> None:
         delta = {

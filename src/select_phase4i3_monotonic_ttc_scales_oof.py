@@ -107,6 +107,7 @@ RECORD_FIELDS = [
     "mean_mae_delta",
     "mean_ssim_delta",
     "mean_iou_delta",
+    "mean_top1_delta",
     "mae_worse_rate",
     "strict_triple_win_rate",
     "changed_cache_rate",
