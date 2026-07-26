@@ -130,6 +130,24 @@ class Phase4I3MonotonicTTScaleTests(unittest.TestCase):
         self.assertAlmostEqual(delta["tactile_mask_iou"], 0.0)
         self.assertAlmostEqual(delta["oracle_top1"], 0.0)
 
+    def test_identity_baseline_has_exact_zero_deltas(self) -> None:
+        rows = [
+            retrieval_row("a", 0.010000001, 0.700000001, 0.2, 2),
+            retrieval_row("b", 0.020000001, 0.800000001, 0.3, 1),
+        ]
+        delta = delta_summary(rows, rows)
+        self.assertEqual(
+            delta,
+            {
+                "queries": 2.0,
+                "tactile_diff_mae": 0.0,
+                "tactile_ssim": 0.0,
+                "tactile_mask_iou": 0.0,
+                "oracle_top1": 0.0,
+            },
+        )
+        self.assertTrue(scale_is_safe(delta, delta, 1e-12))
+
     def test_diagnostics_use_predicted_ttc_not_true_probe(self) -> None:
         rows = []
         for index, ttc in enumerate((10.0, 40.0, 80.0, 90.0)):

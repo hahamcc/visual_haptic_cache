@@ -427,6 +427,18 @@ def evaluate_scale_grid(
     local_v1 = [v1_reference[index] for index in validation]
     local_groups = predicted_groups[validation]
     predicted_far = local_groups == 2
+    identity_scores = arrays["v1"][validation]
+    identity_rows = build_cascade_query_rows(
+        local_v1,
+        groups_by_name,
+        identity_scores.argmin(axis=1),
+        identity_scores,
+        np.zeros((len(validation), 2), dtype=np.float32),
+        source_by_name,
+        cfg,
+        touch_cache,
+        f"phase4i3_fold{fold}_identity",
+    )
     reports = []
     for near, mid, far in grid:
         scores, scaled_weights, _ = apply_group_scales(
@@ -436,25 +448,28 @@ def evaluate_scale_grid(
             local_groups,
             (near, mid, far),
         )
-        rows = build_cascade_query_rows(
-            local_v1,
-            groups_by_name,
-            scores.argmin(axis=1),
-            scores,
-            np.stack(
-                (
-                    np.zeros(len(validation), dtype=np.float32),
-                    scaled_weights,
+        if near == mid == far == 0.0:
+            rows = identity_rows
+        else:
+            rows = build_cascade_query_rows(
+                local_v1,
+                groups_by_name,
+                scores.argmin(axis=1),
+                scores,
+                np.stack(
+                    (
+                        np.zeros(len(validation), dtype=np.float32),
+                        scaled_weights,
+                    ),
+                    axis=1,
                 ),
-                axis=1,
-            ),
-            source_by_name,
-            cfg,
-            touch_cache,
-            f"phase4i3_fold{fold}_scale_{near}_{mid}_{far}",
-        )
+                source_by_name,
+                cfg,
+                touch_cache,
+                f"phase4i3_fold{fold}_scale_{near}_{mid}_{far}",
+            )
         all_delta, far_delta = metric_deltas(
-            local_v1,
+            identity_rows,
             rows,
             predicted_far,
         )
