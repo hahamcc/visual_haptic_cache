@@ -3108,3 +3108,48 @@ phase4i5b_temporal_far_false_negative_audit_v1:
   ttc_error_second_boundary: 20.0
   concentration_top_records: 10
   maximum_record_rows: 100
+
+phase4i6_temporal_far_collection_plan_v1:
+  # Record-disjoint paired collection plan from frozen Phase4I.5b OOF misses.
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  audit_query_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_queries_v1.csv
+  audit_metrics_json: outputs/metrics/phase4i5b_temporal_far_false_negative_audit_v1.json
+  reference_output_csv: outputs/metrics/phase4i6_temporal_far_collection_references_v1.csv
+  collection_plan_csv: outputs/metrics/phase4i6_temporal_far_collection_plan_v1.csv
+  metrics_json: outputs/metrics/phase4i6_temporal_far_collection_plan_v1.json
+  expected_false_negative_queries: 71
+  expected_changed_cache_queries: 3
+  expected_identity_unchanged_queries: 68
+  target_reference_records: 20
+  target_new_records: 60
+  target_new_far_queries: 120
+  probe_focus: [75, 100]
+  severe_ttc_underestimate_frames: 20.0
+  priority_weights:
+    changed_harm: 100.0
+    high_confidence_false_negative: 20.0
+    severe_ttc_underestimate: 10.0
+    underestimate_per_frame: 0.1
+    probe100: 2.0
+  motion_conditions:
+    - constant_slow
+    - constant_fast
+    - accelerating
+    - decelerating
+    - turning
+    - pause_resume
+  pair_designs:
+    - name: same_region_different_speed
+      variant_a: slow_approach
+      variant_b: fast_approach
+    - name: same_speed_different_start_distance
+      variant_a: short_remaining_distance
+      variant_b: long_remaining_distance
+    - name: same_region_progress_contrast
+      variant_a: earlier_progress_state
+      variant_b: later_progress_state
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  print_reference_limit: 20
