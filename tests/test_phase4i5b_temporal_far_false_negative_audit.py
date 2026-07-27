@@ -12,6 +12,7 @@ from src.audit_phase4i5b_temporal_far_false_negatives import (
     RECORD_FIELDS,
     SLICE_FIELDS,
     build_slices,
+    candidate_aware_retrieval_comparison,
     cosine_distance,
     load_feature_metadata,
     numeric_bin,
@@ -62,6 +63,43 @@ def audit_row(
 
 
 class Phase4I5bFalseNegativeAuditTests(unittest.TestCase):
+    def test_unchanged_candidate_has_zero_canonical_effect(self) -> None:
+        deltas, oracle_delta, outcome = (
+            candidate_aware_retrieval_comparison(
+                False,
+                1e-9,
+                -1e-9,
+                1e-9,
+                -1,
+                1e-12,
+            )
+        )
+        self.assertEqual(
+            deltas,
+            {
+                "tactile_diff_mae": 0.0,
+                "tactile_ssim": 0.0,
+                "tactile_mask_iou": 0.0,
+            },
+        )
+        self.assertEqual(oracle_delta, 0)
+        self.assertEqual(outcome, "identity_unchanged")
+
+    def test_changed_candidate_preserves_measured_effect(self) -> None:
+        deltas, oracle_delta, outcome = (
+            candidate_aware_retrieval_comparison(
+                True,
+                0.1,
+                -0.1,
+                -0.1,
+                -1,
+                1e-12,
+            )
+        )
+        self.assertEqual(deltas["tactile_diff_mae"], 0.1)
+        self.assertEqual(oracle_delta, -1)
+        self.assertEqual(outcome, "triple_harm")
+
     def test_retrieval_outcomes_are_mutually_exclusive(self) -> None:
         epsilon = 1e-12
         self.assertEqual(

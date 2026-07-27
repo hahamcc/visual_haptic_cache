@@ -161,6 +161,42 @@ def retrieval_outcome(
     return "mixed_or_neutral"
 
 
+def candidate_aware_retrieval_comparison(
+    changed: bool,
+    mae_delta: float,
+    ssim_delta: float,
+    iou_delta: float,
+    oracle_top1_delta: int,
+    epsilon: float,
+) -> tuple[dict[str, float], int, str]:
+    """Canonicalize retrieval effects around the selected cache identity."""
+    if not changed:
+        return (
+            {
+                "tactile_diff_mae": 0.0,
+                "tactile_ssim": 0.0,
+                "tactile_mask_iou": 0.0,
+            },
+            0,
+            "identity_unchanged",
+        )
+    deltas = {
+        "tactile_diff_mae": mae_delta,
+        "tactile_ssim": ssim_delta,
+        "tactile_mask_iou": iou_delta,
+    }
+    return (
+        deltas,
+        oracle_top1_delta,
+        retrieval_outcome(
+            mae_delta,
+            ssim_delta,
+            iou_delta,
+            epsilon,
+        ),
+    )
+
+
 def cosine_distance(left: np.ndarray, right: np.ndarray) -> float:
     denominator = float(np.linalg.norm(left) * np.linalg.norm(right))
     if denominator <= 1e-12:
@@ -451,20 +487,29 @@ def audit(config_path: str, section: str) -> dict:
             valid[index],
             padding[index],
         )
-        deltas = {
+        changed = (
+            retrieval["phase4i3_selected_cache_image_name"]
+            != retrieval["v1_selected_cache_image_name"]
+        )
+        raw_deltas = {
             metric: finite(retrieval, f"phase4i3_{metric}")
             - finite(retrieval, f"v1_{metric}")
             for metric in METRICS
         }
-        outcome = retrieval_outcome(
-            deltas["tactile_diff_mae"],
-            deltas["tactile_ssim"],
-            deltas["tactile_mask_iou"],
-            epsilon,
+        raw_oracle_top1_delta = (
+            int(retrieval["phase4i3_ranker_oracle_embedding_rank"]) == 1
+        ) - (
+            int(retrieval["v1_ranker_oracle_embedding_rank"]) == 1
         )
-        changed = (
-            retrieval["phase4i3_selected_cache_image_name"]
-            != retrieval["v1_selected_cache_image_name"]
+        deltas, oracle_top1_delta, outcome = (
+            candidate_aware_retrieval_comparison(
+                changed,
+                raw_deltas["tactile_diff_mae"],
+                raw_deltas["tactile_ssim"],
+                raw_deltas["tactile_mask_iou"],
+                raw_oracle_top1_delta,
+                epsilon,
+            )
         )
         raw_rows.append(
             {
@@ -507,17 +552,7 @@ def audit(config_path: str, section: str) -> dict:
                 "phase4i3_oracle_rank": int(
                     retrieval["phase4i3_ranker_oracle_embedding_rank"]
                 ),
-                "oracle_top1_delta": (
-                    int(
-                        retrieval[
-                            "phase4i3_ranker_oracle_embedding_rank"
-                        ]
-                    )
-                    == 1
-                )
-                - (
-                    int(retrieval["v1_ranker_oracle_embedding_rank"]) == 1
-                ),
+                "oracle_top1_delta": oracle_top1_delta,
                 "v1_tactile_diff_mae": finite(
                     retrieval,
                     "v1_tactile_diff_mae",
@@ -683,6 +718,9 @@ def audit(config_path: str, section: str) -> dict:
     outcome_counts = Counter(
         row["retrieval_outcome"] for row in output_rows
     )
+    changed_outcome_counts = Counter(
+        row["retrieval_outcome"] for row in changed
+    )
     report = {
         "mode": "phase4i5b_temporal_far_false_negative_audit_v1",
         "false_negative_queries": len(output_rows),
@@ -692,6 +730,8 @@ def audit(config_path: str, section: str) -> dict:
         "probe_counts": dict(Counter(row["query_probe"] for row in output_rows)),
         "fold_counts": dict(Counter(row["oof_fold"] for row in output_rows)),
         "outcome_counts": dict(outcome_counts),
+        "changed_outcome_counts": dict(changed_outcome_counts),
+        "identity_unchanged_queries": len(output_rows) - len(changed),
         "phase4i3_changed_cache_queries": len(changed),
         "phase4i3_changed_cache_rate": len(changed) / len(output_rows),
         "mae_or_ssim_harm_changed_queries": len(harmful),
