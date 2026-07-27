@@ -3287,3 +3287,114 @@ phase4i6c_robust_motion_quality_audit_v1:
   variable_speed_cv_threshold: 0.35
   speed_slope_threshold: 0.15
   print_record_limit: 30
+
+phase4i6d_raw_candidate_partition_b_v1:
+  # Independent expansion after calibrated robust audit left only 36/60 records.
+  split: "3"
+  record_start: 300
+  record_limit: 600
+  expected_first_record: rec_03300
+  expected_last_record: rec_03899
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  additional_forbidden_partition_csvs:
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  output_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  summary_json: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.json
+
+expanded_region_dataset_phase4i6d_candidate_pool_b_v1:
+  # Preserve candidate pool A and apply the identical probe/track contract.
+  split: "3"
+  record_start: 300
+  record_limit: 600
+  purpose_partition_manifest: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  expected_purpose_partition: development_candidate
+  output_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/contact_index_auto.csv
+  skipped_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/skipped_auto.csv
+  summary_json: data/processed/phase4i6_temporal_far/candidate_pool_b/summary_auto.json
+  record_split_manifest: data/processed/phase4i6_temporal_far/candidate_pool_b/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool_b/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool_b/debug
+  debug_samples: 60
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 1.0
+  split_val: 0.0
+  final_holdout_count: 0
+  record_split_seed: 20260731
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
+
+phase4i6d_temporal_far_candidate_pool_b_audit_v1:
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  candidate_partition_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/metrics/phase4i6d_temporal_far_candidate_query_audit_b_v1.csv
+  record_output_csv: outputs/metrics/phase4i6d_temporal_far_candidate_record_audit_b_v1.csv
+  metrics_json: outputs/metrics/phase4i6d_temporal_far_candidate_pool_audit_b_v1.json
+  probe_focus: [75, 100]
+  target_new_records: 60
+  minimum_records_per_motion_profile: 10
+  motion_profiles:
+    - straight_constant_velocity
+    - straight_accelerating
+    - straight_decelerating
+    - turning_constant_speed
+    - turning_variable_speed
+    - pause_resume
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
+
+phase4i6d_robust_motion_quality_b_audit_v1:
+  # Reuse the calibrated 4 px localizer-grid contract without retuning on pool B.
+  phase4i6b_record_csv: outputs/metrics/phase4i6d_temporal_far_candidate_record_audit_b_v1.csv
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  output_csv: outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  metrics_json: outputs/metrics/phase4i6d_robust_motion_quality_audit_b_v1.json
+  reference_probe: 100
+  target_new_records: 60
+  history_frames: 32
+  localizer_input_width: 192
+  localizer_input_height: 128
+  expected_coordinate_quantization_px: 4.0
+  maximum_plausible_step_px: 17.0
+  maximum_single_step_px: 34.0
+  maximum_jump_ratio: 0.10
+  maximum_tip_base_length_cv: 0.20
+  minimum_velocity_coherence: 0.0
+  maximum_velocity_residual_p90_px: 11.5
+  maximum_velocity_residual_max_px: 23.0
+  minimum_track_confidence: 0.25
+  coherence_step_threshold_px: 0.25
+  median_filter_radius: 1
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30

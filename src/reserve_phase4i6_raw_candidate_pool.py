@@ -73,6 +73,18 @@ def reserve(config_path: str, section: str) -> dict:
     }
     development_ids = {row["record_id"] for row in development}
     sealed = final_holdout_keys(project_path(cfg["final_partition_csv"]))
+    additional_forbidden_rows = []
+    for manifest in cfg.get("additional_forbidden_partition_csvs", []):
+        additional_forbidden_rows.extend(
+            read_csv_rows(project_path(str(manifest)))
+        )
+    additional_forbidden_keys = {
+        (str(row["split"]), str(row["record_id"]))
+        for row in additional_forbidden_rows
+    }
+    additional_forbidden_ids = {
+        str(row["record_id"]) for row in additional_forbidden_rows
+    }
     selected = select_candidate_records(
         Path(dataset["root"]),
         str(dataset["vision_name"]),
@@ -80,8 +92,8 @@ def reserve(config_path: str, section: str) -> dict:
         split,
         int(cfg["record_start"]),
         int(cfg["record_limit"]),
-        development_keys | sealed,
-        development_ids,
+        development_keys | sealed | additional_forbidden_keys,
+        development_ids | additional_forbidden_ids,
     )
     expected_first = str(cfg["expected_first_record"])
     expected_last = str(cfg["expected_last_record"])
@@ -111,6 +123,8 @@ def reserve(config_path: str, section: str) -> dict:
         "partition": "development_candidate",
         "development_overlap": 0,
         "sealed_final_overlap": 0,
+        "additional_forbidden_overlap": 0,
+        "additional_forbidden_records": len(additional_forbidden_ids),
         "raw_completeness": {"vision": True, "touch": True},
         "integrity": {
             "raw_directory_names_only": True,
