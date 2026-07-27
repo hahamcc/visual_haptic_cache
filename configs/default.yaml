@@ -3071,3 +3071,19 @@ phase4i5_temporal_progress_oof_v1:
   minimum_near_mid_retention: 0.5
   bootstrap_iterations: 2000
   bootstrap_seed: 20260725
+
+phase4i5a_far_safety_recalibration_oof_v1:
+  # Threshold-only safety margin over frozen Phase4I.5 strict-OOF probabilities.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  phase4i5_query_csv: outputs/cache/phase4i5_temporal_progress_oof_v1_queries.csv
+  phase4i5_threshold_csv: outputs/metrics/phase4i5_temporal_progress_thresholds_oof_v1.csv
+  query_output_csv: outputs/cache/phase4i5a_far_safety_recalibration_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i5a_far_safety_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i5a_far_safety_recalibration_oof_v1.json
+  calibration_far_recall_target: 0.97
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
