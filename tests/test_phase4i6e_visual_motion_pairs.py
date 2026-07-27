@@ -88,6 +88,7 @@ class Phase4I6eVisualMotionPairTests(unittest.TestCase):
             motion_weight=0.1,
             diversity_weight=0.1,
             quantile_bins=2,
+            minimum_motion_distance=0.5,
         )
         endpoints = [
             int(pair[key])
@@ -103,6 +104,38 @@ class Phase4I6eVisualMotionPairTests(unittest.TestCase):
             {frozenset(("a", "b")), frozenset(("c", "d"))},
         )
         self.assertEqual(top_k, 1)
+
+    def test_pair_selection_enforces_motion_contrast(self) -> None:
+        records = ["a", "b", "c", "d"]
+        similarity = np.asarray(
+            [
+                [-1.0, 0.99, 0.80, 0.10],
+                [0.99, -1.0, 0.10, 0.80],
+                [0.80, 0.10, -1.0, 0.99],
+                [0.10, 0.80, 0.99, -1.0],
+            ],
+            dtype=np.float32,
+        )
+        motion = np.asarray([[0.0], [0.1], [1.0], [1.1]], dtype=np.float32)
+        assignments = {
+            "speed_bin": np.asarray([0, 0, 1, 1], dtype=np.int64)
+        }
+        selected, top_k = greedy_pair_selection(
+            records,
+            similarity,
+            motion,
+            assignments,
+            target_pairs=2,
+            top_k_schedule=[1, 3],
+            motion_weight=0.1,
+            diversity_weight=0.0,
+            quantile_bins=2,
+            minimum_motion_distance=0.5,
+        )
+        self.assertEqual(top_k, 3)
+        self.assertTrue(
+            all(float(pair["motion_distance"]) >= 0.5 for pair in selected)
+        )
 
     def test_pair_design_uses_largest_motion_contrast(self) -> None:
         standardized = np.zeros((2, 8), dtype=np.float32)

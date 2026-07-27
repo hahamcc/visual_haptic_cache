@@ -39,6 +39,7 @@ PAIR_FIELDS = [
     "image_b",
     "detail_similarity",
     "context_similarity",
+    "wide_similarity",
     "visual_similarity",
     "motion_distance",
     "reciprocal_visual_rank",
@@ -180,6 +181,7 @@ def greedy_pair_selection(
     motion_weight: float,
     diversity_weight: float,
     quantile_bins: int,
+    minimum_motion_distance: float = 0.0,
 ) -> tuple[list[dict[str, float | int]], int]:
     count = len(record_ids)
     if target_pairs * 2 > count:
@@ -207,6 +209,8 @@ def greedy_pair_selection(
                     if reciprocal_rank > top_k:
                         continue
                     contrast = float(motion_distance[left, right])
+                    if contrast < minimum_motion_distance:
+                        continue
                     bonus = _coverage_bonus(
                         left,
                         right,
@@ -315,39 +319,34 @@ def save_pair_review(
     left: dict[str, str],
     right: dict[str, str],
     output: Path,
-    detail_size: int,
-    context_size: int,
+    crop_sizes: list[tuple[str, int]],
     label: str,
 ) -> None:
     panels = []
     for row in (left, right):
         x, y = float(row["target_tip_x"]), float(row["target_tip_y"])
-        detail, _ = contact_crop_reflect(
-            row["vision_path"], x, y, detail_size
-        )
-        context, _ = contact_crop_reflect(
-            row["vision_path"], x, y, context_size
-        )
-        panels.append(
-            (
-                Image.fromarray((detail * 255.0).astype(np.uint8)).resize(
-                    (192, 192), Image.Resampling.BILINEAR
-                ),
-                Image.fromarray((context * 255.0).astype(np.uint8)).resize(
-                    (192, 192), Image.Resampling.BILINEAR
-                ),
+        row_panels = []
+        for _, size in crop_sizes:
+            crop, _ = contact_crop_reflect(row["vision_path"], x, y, size)
+            row_panels.append(
+                Image.fromarray((crop * 255.0).astype(np.uint8)).resize(
+                    (192, 192),
+                    Image.Resampling.BILINEAR,
+                )
             )
-        )
-    canvas = Image.new("RGB", (768, 235), "white")
+        panels.append(row_panels)
+    record_width = 192 * len(crop_sizes)
+    canvas = Image.new("RGB", (record_width * 2, 235), "white")
     draw = ImageDraw.Draw(canvas)
-    for row_index, (detail, context) in enumerate(panels):
-        offset = row_index * 384
-        canvas.paste(detail, (offset, 0))
-        canvas.paste(context, (offset + 192, 0))
+    scale_label = " | ".join(name for name, _ in crop_sizes)
+    for row_index, row_panels in enumerate(panels):
+        offset = row_index * record_width
+        for panel_index, panel in enumerate(row_panels):
+            canvas.paste(panel, (offset + panel_index * 192, 0))
         row = left if row_index == 0 else right
         draw.text(
             (offset + 4, 197),
-            f"{row['record_id']}  detail | context",
+            f"{row['record_id']}  {scale_label}",
             fill="black",
         )
     draw.text((4, 217), label, fill="black")
@@ -360,7 +359,9 @@ def save_review_contact_sheet(
     output: Path,
     columns: int = 2,
 ) -> None:
-    cell_width, cell_height = 384, 118
+    cell_height = 118
+    with Image.open(review_paths[0]) as first:
+        cell_width = int(round(cell_height * first.width / first.height))
     rows = int(math.ceil(len(review_paths) / max(columns, 1)))
     sheet = Image.new(
         "RGB",
@@ -431,6 +432,15 @@ def select(config_path: str, section: str) -> dict:
         "layer_recipe": str(cfg["dino_layer_recipe"]),
         "record_images": [row["image_name"] for row in descriptor_rows],
         "target_coordinates": coordinates,
+        "crop_sizes": {
+            "detail": int(cfg["detail_crop_size"]),
+            "context": int(cfg["context_crop_size"]),
+            **(
+                {"wide": int(cfg["wide_crop_size"])}
+                if "wide_crop_size" in cfg
+                else {}
+            ),
+        },
     }
     descriptor_fingerprint = hashlib.sha256(
         json.dumps(
@@ -455,10 +465,13 @@ def select(config_path: str, section: str) -> dict:
     ).to(device)
     pooled = {}
     padding = {}
-    for name, size in (
+    crop_sizes = [
         ("detail", int(cfg["detail_crop_size"])),
         ("context", int(cfg["context_crop_size"])),
-    ):
+    ]
+    if "wide_crop_size" in cfg:
+        crop_sizes.append(("wide", int(cfg["wide_crop_size"])))
+    for name, size in crop_sizes:
         _, pooled[name], padding[name] = encode_rows(
             backbone,
             descriptor_rows,
@@ -480,9 +493,32 @@ def select(config_path: str, section: str) -> dict:
         pooled[name] = normalize_rows(np.asarray(pooled[name]))
     detail_similarity = pooled["detail"] @ pooled["detail"].T
     context_similarity = pooled["context"] @ pooled["context"].T
+    wide_similarity = (
+        pooled["wide"] @ pooled["wide"].T
+        if "wide" in pooled
+        else np.zeros_like(detail_similarity)
+    )
+    visual_weight_sum = (
+        float(cfg["detail_weight"])
+        + float(cfg["context_weight"])
+        + float(cfg.get("wide_weight", 0.0))
+    )
+    if abs(visual_weight_sum - 1.0) > 1e-6:
+        raise RuntimeError(
+            f"Phase4I.6E visual weights must sum to 1, got "
+            f"{visual_weight_sum}"
+        )
+    minimum_motion_distance = float(
+        cfg.get("minimum_motion_distance", 0.0)
+    )
+    if minimum_motion_distance < 0.0:
+        raise RuntimeError(
+            "Phase4I.6E minimum_motion_distance cannot be negative"
+        )
     visual_similarity = (
         float(cfg["detail_weight"]) * detail_similarity
         + float(cfg["context_weight"]) * context_similarity
+        + float(cfg.get("wide_weight", 0.0)) * wide_similarity
     )
     np.fill_diagonal(visual_similarity, -1.0)
     motion = standardized_motion(robust)
@@ -501,6 +537,7 @@ def select(config_path: str, section: str) -> dict:
         float(cfg["motion_contrast_weight"]),
         float(cfg["diversity_weight"]),
         int(cfg["quantile_bins"]),
+        minimum_motion_distance,
     )
     pair_rows = []
     selection_rows = []
@@ -519,8 +556,7 @@ def select(config_path: str, section: str) -> dict:
             left_sample,
             right_sample,
             review_path,
-            int(cfg["detail_crop_size"]),
-            int(cfg["context_crop_size"]),
+            crop_sizes,
             (
                 f"visual={float(pair['visual_similarity']):.4f}  "
                 f"motion={float(pair['motion_distance']):.4f}  "
@@ -538,6 +574,11 @@ def select(config_path: str, section: str) -> dict:
                 "image_b": right_sample["image_name"],
                 "detail_similarity": f"{float(detail_similarity[left_index, right_index]):.9f}",
                 "context_similarity": f"{float(context_similarity[left_index, right_index]):.9f}",
+                "wide_similarity": (
+                    f"{float(wide_similarity[left_index, right_index]):.9f}"
+                    if "wide" in pooled
+                    else ""
+                ),
                 "visual_similarity": f"{float(pair['visual_similarity']):.9f}",
                 "motion_distance": f"{float(pair['motion_distance']):.9f}",
                 "reciprocal_visual_rank": str(pair["reciprocal_rank"]),
@@ -632,6 +673,7 @@ def select(config_path: str, section: str) -> dict:
         "selected_pairs": len(pair_rows),
         "selected_far_queries": len(selected_sample_rows),
         "selected_reciprocal_top_k": selected_top_k,
+        "minimum_motion_distance": minimum_motion_distance,
         "descriptor_fingerprint": descriptor_fingerprint,
         "pair_design_counts": dict(
             Counter(row["pair_design"] for row in pair_rows)

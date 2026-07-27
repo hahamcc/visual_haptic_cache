@@ -3435,3 +3435,44 @@ phase4i6e_visual_motion_pair_selection_v1:
   review_dir: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/review
   review_contact_sheet: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/review_contact_sheet.jpg
   print_pair_limit: 30
+
+phase4i6e_visual_motion_pair_selection_v2:
+  # V2 rejects weak within-pair motion contrast and uses wide visual context.
+  pool_names: [candidate_pool_a, candidate_pool_b]
+  robust_record_csvs:
+    - outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+    - outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  candidate_sample_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  target_records: 60
+  probe_focus: [75, 100]
+  descriptor_probe: 100
+  dino_model: dinov2_vits14
+  dino_input_size: 224
+  dino_layer_recipe: layer12
+  detail_crop_size: 48
+  context_crop_size: 96
+  wide_crop_size: 144
+  center_sigma: 0.35
+  detail_weight: 0.45
+  context_weight: 0.30
+  wide_weight: 0.25
+  batch_size: 16
+  device: auto
+  quantile_bins: 4
+  visual_top_k_schedule: [10, 20, 32, 64, 102]
+  minimum_motion_distance: 0.5
+  motion_contrast_weight: 0.15
+  diversity_weight: 0.10
+  detail_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_detail
+  context_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_context
+  wide_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/dino_wide
+  pair_output_csv: outputs/metrics/phase4i6e_visual_motion_pairs_v2.csv
+  selection_output_csv: outputs/metrics/phase4i6e_selected_records_v2.csv
+  selected_samples_csv: data/processed/phase4i6_temporal_far/selected_samples_proposed_v2.csv
+  metrics_json: outputs/metrics/phase4i6e_visual_motion_pair_selection_v2.json
+  review_dir: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review
+  review_contact_sheet: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review_contact_sheet.jpg
+  print_pair_limit: 30
