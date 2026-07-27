@@ -41,6 +41,9 @@ REFERENCE_FIELDS = [
 COLLECTION_FIELDS = [
     "collection_slot",
     "new_record_id",
+    "new_split",
+    "object_id",
+    "contact_region_id",
     "planned_pair_id",
     "pair_variant",
     "pair_design",
@@ -282,6 +285,9 @@ def build_collection_plan(
             {
                 "collection_slot": f"{index + 1:03d}",
                 "new_record_id": "",
+                "new_split": "",
+                "object_id": "",
+                "contact_region_id": "",
                 "planned_pair_id": f"pair_{pair_index + 1:03d}",
                 "pair_variant": variant,
                 "pair_design": str(pair["name"]),

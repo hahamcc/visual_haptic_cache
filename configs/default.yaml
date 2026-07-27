@@ -3153,3 +3153,26 @@ phase4i6_temporal_far_collection_plan_v1:
   maximum_padding_ratio: 0
   maximum_frame_gap: 1
   print_reference_limit: 20
+
+phase4i6_temporal_far_data_validation_v1:
+  # Structural acceptance gate before any Phase4I.6 TTC retraining.
+  completed_plan_csv: data/processed/phase4i6_temporal_far/collection_manifest.csv
+  new_samples_csv: data/processed/phase4i6_temporal_far/region_samples_auto.csv
+  new_motion_tracks_csv: data/processed/phase4i6_temporal_far/sensor_tracks_auto.csv
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/metrics/phase4i6_temporal_far_data_query_audit_v1.csv
+  record_output_csv: outputs/metrics/phase4i6_temporal_far_data_record_audit_v1.csv
+  metrics_json: outputs/metrics/phase4i6_temporal_far_data_validation_v1.json
+  expected_new_records: 60
+  expected_new_far_queries: 120
+  probe_focus: [75, 100]
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  allow_unplanned_records: false
