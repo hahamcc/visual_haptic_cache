@@ -3176,3 +3176,46 @@ phase4i6_temporal_far_data_validation_v1:
   maximum_frame_gap: 1
   require_paths_exist: true
   allow_unplanned_records: false
+
+phase4i6_raw_candidate_partition_v1:
+  # Freeze before label generation; split 3 is untouched by V4 and V2 final.
+  split: "3"
+  record_start: 0
+  record_limit: 300
+  expected_first_record: rec_03000
+  expected_last_record: rec_03299
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  output_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  summary_json: data/processed/phase4i6_temporal_far/raw_candidate_partitions.json
+
+expanded_region_dataset_phase4i6_candidate_pool_v1:
+  # Overcomplete pool; the later selector may keep only verified paired cases.
+  split: "3"
+  record_start: 0
+  record_limit: 300
+  purpose_partition_manifest: data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  expected_purpose_partition: development_candidate
+  output_csv: data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+  tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase4i6_temporal_far/candidate_pool/contact_index_auto.csv
+  skipped_csv: data/processed/phase4i6_temporal_far/candidate_pool/skipped_auto.csv
+  summary_json: data/processed/phase4i6_temporal_far/candidate_pool/summary_auto.json
+  record_split_manifest: data/processed/phase4i6_temporal_far/candidate_pool/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool/debug
+  debug_samples: 60
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 1.0
+  split_val: 0.0
+  final_holdout_count: 0
+  record_split_seed: 20260730
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
