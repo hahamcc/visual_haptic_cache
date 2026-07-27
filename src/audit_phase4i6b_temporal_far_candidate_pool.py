@@ -424,9 +424,9 @@ def audit(config_path: str, section: str) -> dict:
             "record_csv": str(project_path(cfg["record_output_csv"])),
         },
         "next_action": (
-            "build visual-contact descriptors and select 30 record pairs"
+            "run Phase4I.6C robust tip/base trajectory audit"
             if pool_ready
-            else "expand the raw development candidate pool"
+            else "expand the raw development candidate pool before pairing"
         ),
     }
     write_json(project_path(cfg["metrics_json"]), summary)

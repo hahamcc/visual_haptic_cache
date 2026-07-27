@@ -3255,3 +3255,31 @@ phase4i6b_temporal_far_candidate_pool_audit_v1:
   variable_speed_cv_threshold: 0.35
   speed_slope_threshold: 0.15
   print_record_limit: 30
+
+phase4i6c_robust_motion_quality_audit_v1:
+  # Diagnose stop-jump localizer noise before visual/contact pair selection.
+  phase4i6b_record_csv: outputs/metrics/phase4i6b_temporal_far_candidate_record_audit_v1.csv
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+  output_csv: outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+  metrics_json: outputs/metrics/phase4i6c_robust_motion_quality_audit_v1.json
+  reference_probe: 100
+  target_new_records: 60
+  history_frames: 32
+  maximum_plausible_step_px: 8.0
+  maximum_single_step_px: 24.0
+  maximum_jump_ratio: 0.10
+  maximum_tip_base_length_cv: 0.15
+  minimum_velocity_coherence: 0.0
+  maximum_velocity_residual_p90_px: 5.0
+  maximum_velocity_residual_max_px: 12.0
+  minimum_track_confidence: 0.25
+  coherence_step_threshold_px: 0.25
+  median_filter_radius: 1
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
