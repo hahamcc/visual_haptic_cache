@@ -3087,3 +3087,24 @@ phase4i5a_far_safety_recalibration_oof_v1:
   minimum_near_mid_retention: 0.5
   bootstrap_iterations: 2000
   bootstrap_seed: 20260725
+
+phase4i5b_temporal_far_false_negative_audit_v1:
+  # Read-only audit of the 71 true-far samples missed by frozen Phase4I.5a.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  phase4i5a_query_csv: outputs/cache/phase4i5a_far_safety_recalibration_oof_v1_queries.csv
+  feature_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/temporal_dino
+  query_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_queries_v1.csv
+  slice_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_slices_v1.csv
+  record_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_records_v1.csv
+  metrics_json: outputs/metrics/phase4i5b_temporal_far_false_negative_audit_v1.json
+  expected_false_negative_queries: 71
+  metric_epsilon: 0.000000000001
+  high_confidence_miss_margin: 0.15
+  miss_margin_first_boundary: 0.05
+  miss_margin_second_boundary: 0.15
+  ttc_error_first_boundary: 10.0
+  ttc_error_second_boundary: 20.0
+  concentration_top_records: 10
+  maximum_record_rows: 100
