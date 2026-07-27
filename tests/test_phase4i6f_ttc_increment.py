@@ -91,6 +91,39 @@ class Phase4I6fTTCIncrementTests(unittest.TestCase):
         counts = Counter(folds.values())
         self.assertEqual(sorted(counts.values()), [4, 4, 4])
 
+    def test_real_scale_pair_and_record_counts_are_balanced(self) -> None:
+        rows = [row(f"rec_{index:05d}") for index in range(60)]
+        group_by_record = {}
+        for pair_index in range(17):
+            group_id = f"pair_{pair_index:03d}"
+            group_by_record[f"rec_{pair_index * 2:05d}"] = group_id
+            group_by_record[f"rec_{pair_index * 2 + 1:05d}"] = group_id
+        for index in range(34, 60):
+            group_by_record[f"rec_{index:05d}"] = f"single_{index:05d}"
+        assignments = {
+            "speed_bin": np.asarray(
+                [index % 4 for index in range(60)],
+                dtype=np.int64,
+            ),
+            "turn_bin": np.asarray(
+                [(index // 2) % 4 for index in range(60)],
+                dtype=np.int64,
+            ),
+        }
+        folds = assign_grouped_folds(
+            rows,
+            group_by_record,
+            assignments,
+            fold_count=3,
+        )
+        record_counts = Counter(folds.values())
+        pair_counts = Counter(
+            folds[f"rec_{pair_index * 2:05d}"]
+            for pair_index in range(17)
+        )
+        self.assertEqual(sorted(record_counts.values()), [20, 20, 20])
+        self.assertEqual(sorted(pair_counts.values()), [5, 6, 6])
+
 
 if __name__ == "__main__":
     unittest.main()

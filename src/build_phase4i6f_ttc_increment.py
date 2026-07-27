@@ -207,10 +207,6 @@ def assign_grouped_folds(
         for fold in range(fold_count):
             if fold_sizes[fold] + len(indices) > maximum_fold_size:
                 continue
-            size_target = total / float(fold_count)
-            size_penalty = (
-                fold_sizes[fold] + len(indices) - size_target
-            ) ** 2
             bin_penalty = 0.0
             for name, values in assignments.items():
                 added = Counter(int(values[index]) for index in indices)
@@ -222,8 +218,8 @@ def assign_grouped_folds(
                     )
                     bin_penalty += (after - target) ** 2 / max(target, 1.0)
             candidate = (
-                float(size_penalty + 0.25 * bin_penalty),
                 fold_sizes[fold],
+                float(bin_penalty),
                 fold,
             )
             if best is None or candidate < best:
@@ -496,6 +492,20 @@ def build(config_path: str, section: str) -> dict:
                 "approved": "1",
             }
         )
+    fold_pair_counts = {
+        str(fold): sum(
+            int(row["oof_fold"]) == fold
+            for row in approved_pair_output
+        )
+        for fold in range(int(cfg["fold_count"]))
+    }
+    if max(fold_pair_counts.values()) - min(
+        fold_pair_counts.values()
+    ) > 1:
+        raise RuntimeError(
+            "Phase4I.6F approved-pair folds are imbalanced: "
+            f"{fold_pair_counts}"
+        )
     selected_track_rows = [
         row
         for row in all_track_rows
@@ -565,9 +575,7 @@ def build(config_path: str, section: str) -> dict:
         "fold_record_counts": dict(
             Counter(row["oof_fold"] for row in record_rows)
         ),
-        "fold_pair_counts": dict(
-            Counter(row["oof_fold"] for row in approved_pair_output)
-        ),
+        "fold_pair_counts": fold_pair_counts,
         "source_pool_counts": dict(
             Counter(row["source_pool"] for row in record_rows)
         ),
