@@ -47,7 +47,7 @@ COLLECTION_FIELDS = [
     "reference_record_id",
     "reference_query_image_name",
     "probe_focus",
-    "motion_condition",
+    "shared_motion_profile",
     "paired_variant",
     "target_failure_mode",
     "minimum_real_point_count",
@@ -265,8 +265,10 @@ def build_collection_plan(
             "Phase4I.6 target_new_records must be even for paired collection"
         )
     pair_designs = list(cfg["pair_designs"])
-    motion_conditions = [str(value) for value in cfg["motion_conditions"]]
-    if not references or not pair_designs or not motion_conditions:
+    motion_profiles = [
+        str(value) for value in cfg["shared_motion_profiles"]
+    ]
+    if not references or not pair_designs or not motion_profiles:
         raise RuntimeError("Phase4I.6 collection recipes cannot be empty")
 
     output = []
@@ -288,8 +290,8 @@ def build_collection_plan(
                 "probe_focus": "|".join(
                     str(value) for value in cfg["probe_focus"]
                 ),
-                "motion_condition": motion_conditions[
-                    pair_index % len(motion_conditions)
+                "shared_motion_profile": motion_profiles[
+                    pair_index % len(motion_profiles)
                 ],
                 "paired_variant": str(
                     pair["variant_a"]
@@ -315,7 +317,38 @@ def build_collection_plan(
                 "notes": "",
             }
         )
+    validate_collection_plan(output)
     return output
+
+
+def validate_collection_plan(rows: list[dict[str, str]]) -> None:
+    pairs: dict[str, list[dict[str, str]]] = {}
+    for row in rows:
+        pairs.setdefault(row["planned_pair_id"], []).append(row)
+    for pair_id, pair_rows in pairs.items():
+        if len(pair_rows) != 2:
+            raise RuntimeError(
+                f"Phase4I.6 {pair_id} must contain exactly two records"
+            )
+        if {row["pair_variant"] for row in pair_rows} != {"A", "B"}:
+            raise RuntimeError(
+                f"Phase4I.6 {pair_id} must contain A and B variants"
+            )
+        for key in (
+            "pair_design",
+            "reference_record_id",
+            "reference_query_image_name",
+            "shared_motion_profile",
+            "probe_focus",
+        ):
+            if len({row[key] for row in pair_rows}) != 1:
+                raise RuntimeError(
+                    f"Phase4I.6 {pair_id} does not share {key}"
+                )
+        if len({row["paired_variant"] for row in pair_rows}) != 2:
+            raise RuntimeError(
+                f"Phase4I.6 {pair_id} must change paired_variant"
+            )
 
 
 def plan(config_path: str, section: str) -> dict:
@@ -383,8 +416,10 @@ def plan(config_path: str, section: str) -> dict:
             "planned_far_queries": planned_far_queries,
             "planned_pairs": len(collection) // 2,
             "probe_focus": [int(value) for value in cfg["probe_focus"]],
-            "motion_condition_counts": dict(
-                Counter(row["motion_condition"] for row in collection)
+            "shared_motion_profile_counts": dict(
+                Counter(
+                    row["shared_motion_profile"] for row in collection
+                )
             ),
             "pair_design_counts": dict(
                 Counter(row["pair_design"] for row in collection)

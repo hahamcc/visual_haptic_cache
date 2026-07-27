@@ -3131,12 +3131,12 @@ phase4i6_temporal_far_collection_plan_v1:
     severe_ttc_underestimate: 10.0
     underestimate_per_frame: 0.1
     probe100: 2.0
-  motion_conditions:
-    - constant_slow
-    - constant_fast
-    - accelerating
-    - decelerating
-    - turning
+  shared_motion_profiles:
+    - straight_constant_velocity
+    - straight_accelerating
+    - straight_decelerating
+    - turning_constant_speed
+    - turning_variable_speed
     - pause_resume
   pair_designs:
     - name: same_region_different_speed

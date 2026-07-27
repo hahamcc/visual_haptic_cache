@@ -6,6 +6,7 @@ from src.plan_phase4i6_temporal_far_collection import (
     build_collection_plan,
     build_reference_rows,
     classify_reference,
+    validate_collection_plan,
 )
 
 
@@ -54,10 +55,10 @@ def config() -> dict:
         "target_new_records": 6,
         "target_new_far_queries": 12,
         "probe_focus": [75, 100],
-        "motion_conditions": [
-            "constant_velocity",
-            "accelerating_or_decelerating",
-            "turning",
+        "shared_motion_profiles": [
+            "straight_constant_velocity",
+            "straight_accelerating",
+            "turning_constant_speed",
         ],
         "pair_designs": [
             {
@@ -157,17 +158,31 @@ class Phase4I6TemporalFarCollectionPlanTests(unittest.TestCase):
         self.assertEqual(plan[0]["record_disjoint_required"], "1")
         self.assertEqual(plan[0]["probe_focus"], "75|100")
         self.assertEqual(
-            {row["motion_condition"] for row in plan},
+            {row["shared_motion_profile"] for row in plan},
             {
-                "constant_velocity",
-                "accelerating_or_decelerating",
-                "turning",
+                "straight_constant_velocity",
+                "straight_accelerating",
+                "turning_constant_speed",
             },
         )
         self.assertEqual(
             sum(int(row["expected_far_queries"]) for row in plan),
             12,
         )
+
+    def test_collection_plan_rejects_pair_profile_mismatch(self) -> None:
+        cfg = config()
+        references = build_reference_rows(
+            [
+                audit_row("0_rec_a_probe100.jpg", "rec_a", 100),
+                audit_row("0_rec_b_probe075.jpg", "rec_b", 75),
+            ],
+            cfg,
+        )
+        plan = build_collection_plan(references, cfg)
+        plan[1]["shared_motion_profile"] = "turning_constant_speed"
+        with self.assertRaisesRegex(RuntimeError, "shared_motion_profile"):
+            validate_collection_plan(plan)
 
     def test_collection_plan_requires_even_record_count(self) -> None:
         cfg = config()
