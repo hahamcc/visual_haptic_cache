@@ -3476,3 +3476,59 @@ phase4i6e_visual_motion_pair_selection_v2:
   review_dir: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review
   review_contact_sheet: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review_contact_sheet.jpg
   print_pair_limit: 30
+
+phase4i6f_ttc_increment_v1:
+  # Strict visual review: ambiguous and visually mismatched V2 pairs excluded.
+  v2_pair_csv: outputs/metrics/phase4i6e_visual_motion_pairs_v2.csv
+  approved_pair_ids:
+    - pair_001
+    - pair_003
+    - pair_004
+    - pair_005
+    - pair_006
+    - pair_008
+    - pair_009
+    - pair_010
+    - pair_012
+    - pair_014
+    - pair_015
+    - pair_016
+    - pair_017
+    - pair_020
+    - pair_021
+    - pair_026
+    - pair_028
+  approval_source: strict_visual_review_confirmed_2026_07_27
+  minimum_approved_pair_motion_distance: 0.5
+  pool_names: [candidate_pool_a, candidate_pool_b]
+  robust_record_csvs:
+    - outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+    - outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  candidate_sample_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_track_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  candidate_partition_csvs:
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  target_records: 60
+  probe_focus: [75, 100]
+  fold_count: 3
+  quantile_bins: 4
+  fill_distance_weight: 0.20
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  record_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/records.csv
+  approved_pair_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/approved_pairs.csv
+  sample_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/region_samples_auto.csv
+  track_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/sensor_tracks_auto.csv
+  metrics_json: outputs/metrics/phase4i6f_ttc_increment_v1.json
