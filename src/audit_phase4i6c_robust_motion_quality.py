@@ -221,6 +221,27 @@ def audit(config_path: str, section: str) -> dict:
             "Phase4I.6C requires exactly one reference-probe sample per "
             f"strict record: {len(samples)} != {len(strict)}"
         )
+    widths = {int(row["image_width"]) for row in samples}
+    heights = {int(row["image_height"]) for row in samples}
+    if len(widths) != 1 or len(heights) != 1:
+        raise RuntimeError(
+            "Phase4I.6C requires a single image resolution for its "
+            f"quantization contract: widths={widths}, heights={heights}"
+        )
+    image_width = next(iter(widths))
+    image_height = next(iter(heights))
+    quantization_x = image_width / float(cfg["localizer_input_width"])
+    quantization_y = image_height / float(cfg["localizer_input_height"])
+    expected_quantization = float(cfg["expected_coordinate_quantization_px"])
+    if (
+        abs(quantization_x - expected_quantization) > 1e-6
+        or abs(quantization_y - expected_quantization) > 1e-6
+    ):
+        raise RuntimeError(
+            "Phase4I.6C localizer quantization changed: "
+            f"x={quantization_x}, y={quantization_y}, "
+            f"expected={expected_quantization}"
+        )
     tracks = read_pose_tracks(project_path(cfg["candidate_motion_tracks_csv"]))
     output = []
     for sample in samples:
@@ -333,6 +354,20 @@ def audit(config_path: str, section: str) -> dict:
                 "minimum_track_confidence",
                 "median_filter_radius",
             )
+        },
+        "localizer_quantization_contract": {
+            "image_width": image_width,
+            "image_height": image_height,
+            "localizer_input_width": int(cfg["localizer_input_width"]),
+            "localizer_input_height": int(cfg["localizer_input_height"]),
+            "coordinate_quantization_x_px": quantization_x,
+            "coordinate_quantization_y_px": quantization_y,
+            "diagonal_one_cell_px": float(
+                np.hypot(quantization_x, quantization_y)
+            ),
+            "opposed_two_keypoint_diagonal_px": float(
+                2.0 * np.hypot(quantization_x, quantization_y)
+            ),
         },
         "integrity": {
             "source": "strict Phase4I.6B development candidates only",
