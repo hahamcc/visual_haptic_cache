@@ -2299,3 +2299,1294 @@ expanded_region_dataset_phase35_final_holdout_v1_split1:
   min_tip_base_distance: 6.0
   max_tip_base_distance: 45.0
   excluded_records: []
+
+phase4f_dino_cross_attention_oof_v1:
+  # V2 development-only experiment. The implementation rejects final-holdout rows.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4f_dino_cross_attention_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4f_dino_cross_attention_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4f_dino_cross_attention_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4f_dino_cross_attention_oof_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  epochs: 6
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  dropout: 0.1
+  hidden_dim: 192
+  attention_heads: 4
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  ssim_loss_weight: 0.125
+  iou_loss_weight: 0.125
+  hard_negative_weight: 3.0
+  score_weights: embedding_only
+  seed: 20260723
+
+phase4f_dino_cross_attention_embedding_only_oof_v1:
+  # First controlled V2 ablation: only the DINO spatial matcher changes from V1.
+  # It uses the same complete development cache and per-query same-record exclusion.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4f_dino_cross_attention_embedding_only_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4f_dino_cross_attention_embedding_only_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4f_dino_cross_attention_embedding_only_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4f_dino_cross_attention_embedding_only_oof_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  epochs: 6
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  dropout: 0.1
+  hidden_dim: 192
+  attention_heads: 4
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  target_temperature: 0.02
+  listwise_weight: 1.0
+  ssim_loss_weight: 0.0
+  iou_loss_weight: 0.0
+  hard_negative_weight: 1.0
+  score_weights: embedding_only
+  seed: 20260723
+
+phase4f_dino_patch_similarity_oof_v1:
+  # Training-free DINO diagnostic: local token correspondence only, no ranker fitting.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  query_output_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4f_dino_patch_similarity_oof_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  # A 3x3 spatial neighbourhood permits a one-patch registration error.
+  local_match_radius: 1
+  detail_similarity_weight: 0.5
+  seed: 20260723
+
+phase4g_dino_v1_fusion_v1:
+  # V2.1: strict OOF convex fusion; no final-holdout path is accepted.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  train_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  v1_oof_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_oof_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_oof_query_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  dino_oof_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  v1_validation_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4g_dino_v1_fusion_v1/v1_validation/checkpoints
+  v1_validation_query_csv: outputs/cache/phase4g_v1_validation_queries.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  dino_validation_query_csv: outputs/cache/phase4g_dino_validation_queries.csv
+  dino_validation_candidate_csv: outputs/cache/phase4g_dino_validation_candidates.csv
+  fusion_oof_query_csv: outputs/cache/phase4g_dino_v1_fusion_oof_queries.csv
+  fusion_oof_candidate_csv: outputs/cache/phase4g_dino_v1_fusion_oof_candidates.csv
+  fusion_validation_query_csv: outputs/cache/phase4g_dino_v1_fusion_validation_queries.csv
+  fusion_validation_candidate_csv: outputs/cache/phase4g_dino_v1_fusion_validation_candidates.csv
+  fusion_weights_csv: outputs/metrics/phase4g_dino_v1_fusion_weights.csv
+  metrics_json: outputs/metrics/phase4g_dino_v1_fusion_v1.json
+  detail_crop_size: 48
+  context_crop_size: 96
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  geometry_filter_k: 32
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  local_match_radius: 1
+  detail_similarity_weight: 0.5
+  batch_size: 8
+  v1_batch_size: 16
+  v1_epochs: 4
+  v1_learning_rate: 0.001
+  v1_weight_decay: 0.0001
+  v1_dropout: 0.1
+  v1_listwise_weight: 1.0
+  target_temperature: 0.02
+  fusion_score_temperature: 1.0
+  fusion_epochs: 400
+  fusion_learning_rate: 0.05
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  v1_ranker_seed: 20260805
+  seed: 20260724
+
+phase4f_v2_final_partition:
+  # Reserve before V2 selection; do not build or inspect until V2 recipe is frozen.
+  development_sources:
+    - split: "0"
+      ranges:
+        - start: 750
+          limit: 200
+    - split: "1"
+      ranges:
+        - start: 1000
+          limit: 250
+  final_holdout_sources:
+    - split: "2"
+      ranges:
+        - start: 2000
+          limit: 100
+  output_csv: data/processed/phase4f_v2_record_partitions.csv
+  summary_json: data/processed/phase4f_v2_record_partitions.json
+
+phase4h_protocol_v1:
+  # Freeze and audit every development-only input before Phase4H work starts.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_query_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_queries.csv
+  dino_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  geometry_filter_k: 32
+  audit_json: outputs/metrics/phase4h_protocol_audit_v1.json
+
+phase4h_dino_ablation_oof_v1:
+  # Training-free DINO ablations. All variants use the exact frozen V1 Top-32.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  dino_candidate_csv: outputs/cache/phase4f_dino_patch_similarity_oof_v1_candidates.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/cache/phase4h_dino_ablation_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4h_dino_ablation_oof_v1.json
+  feature_cache_pattern: /mnt/data/cheng/haptic-cache/phase4h_dino_ablation_oof_v1/features/{recipe}.npz
+  token_cache_dir: /mnt/data/cheng/haptic-cache/phase4h_dino_ablation_oof_v1/tokens
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  score_batch_size: 8
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  hard_local_radius: 1
+  soft_local_radius: 2
+  soft_temperature: 0.07
+  position_penalty: 0.25
+  center_sigma: 0.35
+  seed: 20260724
+  recipes:
+    - name: baseline_black_raw_layer12_hard
+      padding_mode: black
+      canonicalization_mode: raw
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_raw_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: raw
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_sensor_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: sensor_axis
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer12_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer8_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer8
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_layer10_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: layer10
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_hard
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: hard_local
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_soft
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: position_soft
+      scales: [48, 96]
+      scale_weights: [0.5, 0.5]
+    - name: reflect_motion_mean_8_10_12_soft_wide
+      padding_mode: reflect
+      canonicalization_mode: motion_axis
+      layer_recipe: mean_8_10_12
+      matcher: position_soft
+      scales: [48, 96, 144]
+      scale_weights: [0.4, 0.35, 0.25]
+
+phase4h_dino_frontier_v1:
+  ablation_metrics_json: outputs/metrics/phase4h_dino_ablation_oof_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  baseline_recipe: baseline_black_raw_layer12_hard
+  shape_recipe_mae_slack: 0.0001
+
+phase4h_tactile_index_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  metrics_json: outputs/metrics/phase4h_tactile_index_v1.json
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+
+phase4h_tactile_alignment_oof_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  # Empty by design: convert the frozen C2 OOF predicted_ttc to a soft distribution.
+  # A future OOF TTC probability table may be supplied only if it covers V4 by record.
+  ttc_predictions_csv: ""
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  tactile_index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4h_tactile_alignment_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  batch_size: 32
+  epochs: 50
+  early_stopping_patience: 8
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  dropout: 0.1
+  gradient_clip: 1.0
+  target_temperature: 0.02
+  score_temperature: 0.1
+  listwise_loss_weight: 1.0
+  latent_loss_weight: 0.1
+  hard_negative_loss_weight: 0.5
+  hard_negative_margin: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  seeds: [20260724, 20260725, 20260726]
+
+phase4h_dino_gate_oof_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  aligned_candidate_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_dino_gate_oof_v1_candidates.csv
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  metrics_json: outputs/metrics/phase4h_dino_gate_oof_v1.json
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+  seed: 20260724
+
+phase4h_oof_evaluation_v1:
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  gated_query_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  metrics_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+
+phase4h_validation_features_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  feature_cache_npz: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/query_features.npz
+  token_cache_dir: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/tokens
+  candidate_output_csv: outputs/cache/phase4h_validation_recipe_candidates.csv
+  metrics_json: outputs/metrics/phase4h_validation_features_v1.json
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  geometry_filter_k: 32
+  batch_size: 8
+  score_batch_size: 8
+  hard_local_radius: 1
+  soft_local_radius: 2
+  soft_temperature: 0.07
+  position_penalty: 0.25
+  center_sigma: 0.35
+  seed: 20260724
+
+phase4h_validation_v1:
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  validation_predictions_csv: outputs/cache/proposal_ranker_phase35_v4_validation/predictions.csv
+  # Use frozen validation C2 predicted_ttc; no true probe or separately fitted validation label is read.
+  ttc_predictions_csv: ""
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  validation_feature_cache_npz: /mnt/data/cheng/haptic-cache/phase4h_validation_v1/query_features.npz
+  validation_recipe_candidate_csv: outputs/cache/phase4h_validation_recipe_candidates.csv
+  tactile_index_npz: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+  alignment_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints
+  gate_checkpoint: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints/full.pt
+  gate_json: outputs/cache/phase4h_dino_gate_oof_v1.json
+  v1_validation_query_csv: outputs/cache/phase4g_v1_validation_queries.csv
+  v1_validation_candidate_csv: outputs/cache/phase4g_v1_validation_candidates.csv
+  aligned_query_output_csv: outputs/cache/phase4h_validation_aligned_queries.csv
+  aligned_candidate_output_csv: outputs/cache/phase4h_validation_aligned_candidates.csv
+  gated_query_output_csv: outputs/cache/phase4h_validation_gated_queries.csv
+  gated_candidate_output_csv: outputs/cache/phase4h_validation_gated_candidates.csv
+  metrics_json: outputs/metrics/phase4h_validation_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  batch_size: 32
+  dropout: 0.1
+  gate_dropout: 0.1
+  seeds: [20260724, 20260725, 20260726]
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260724
+  minimum_coverage: 0.10
+  minimum_precision: 0.80
+
+phase4h_cache_trust_v1:
+  # Guarded post-acceptance step. This never reuses a Phase4E/V1 trust checkpoint.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4h_validation_metrics_json: outputs/metrics/phase4h_validation_v1.json
+  oof_gated_query_csv: outputs/cache/phase4h_dino_gate_oof_v1_queries.csv
+  oof_gated_candidate_csv: outputs/cache/phase4h_dino_gate_oof_v1_candidates.csv
+  oof_aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  validation_gated_query_csv: outputs/cache/phase4h_validation_gated_queries.csv
+  validation_gated_candidate_csv: outputs/cache/phase4h_validation_gated_candidates.csv
+  validation_aligned_query_csv: outputs/cache/phase4h_validation_aligned_queries.csv
+  checkpoint: /mnt/data/cheng/haptic-cache/phase4h_cache_trust_v1/checkpoints/best.pt
+  validation_output_csv: outputs/metrics/phase4h_cache_trust_v1_validation.csv
+  gate_json: outputs/cache/phase4h_cache_trust_v1_gate.json
+  metrics_json: outputs/metrics/phase4h_cache_trust_v1.json
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  dropout: 0.1
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260724
+  min_coverage: 0.10
+  target_coverage: 0.30
+  max_coverage: 0.70
+  seed: 20260724
+
+phase4h_final_recipe_v1:
+  # This section only fingerprints accepted development artifacts. It never opens final-holdout rows.
+  validation_metrics_json: outputs/metrics/phase4h_validation_v1.json
+  trust_metrics_json: outputs/metrics/phase4h_cache_trust_v1.json
+  manifest_json: outputs/cache/phase4h_final_recipe_v1_manifest.json
+  artifacts:
+    protocol_audit: outputs/metrics/phase4h_protocol_audit_v1.json
+    dino_frontier: outputs/cache/phase4h_dino_frontier_v1.json
+    tactile_index: /mnt/data/cheng/haptic-cache/phase4h_tactile_index_v1/tactile_index.npz
+    alignment_seed_20260724: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260724.pt
+    alignment_seed_20260725: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260725.pt
+    alignment_seed_20260726: /mnt/data/cheng/haptic-cache/phase4h_tactile_alignment_oof_v1/checkpoints/full_seed_20260726.pt
+    dino_safety_gate: /mnt/data/cheng/haptic-cache/phase4h_dino_gate_oof_v1/checkpoints/full.pt
+    dino_safety_gate_policy: outputs/cache/phase4h_dino_gate_oof_v1.json
+    cache_trust: /mnt/data/cheng/haptic-cache/phase4h_cache_trust_v1/checkpoints/best.pt
+    cache_trust_policy: outputs/cache/phase4h_cache_trust_v1_gate.json
+    validation_metrics: outputs/metrics/phase4h_validation_v1.json
+
+phase4h_tactile_hard_case_mining_v1:
+  # Failure-branch analysis only. Inputs are strict development OOF; validation/final are forbidden.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_query_csv: outputs/cache/phase4h_dino_ablation_oof_v1_queries.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  aligned_query_csv: outputs/cache/phase4h_tactile_alignment_oof_v1_queries.csv
+  query_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_queries.csv
+  pair_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_pairs.csv
+  record_output_csv: outputs/metrics/phase4h_tactile_hard_cases_v1_records.csv
+  collection_plan_csv: outputs/metrics/phase4h_tactile_collection_plan_v1.csv
+  metrics_json: outputs/metrics/phase4h_tactile_hard_cases_v1.json
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4h_tactile_hard_cases_v1/debug
+  geometry_filter_k: 32
+  require_failed_oof: true
+  far_probe_min: 75
+  max_hard_pairs_per_query: 4
+  minimum_spatial_iou_gain: 0.01
+  mae_harm_epsilon: 0.0
+  minimum_aligned_iou_drop: 0.01
+  minimum_far_ssim_drop: 0.005
+  priority_weights:
+    hard_negative_pair: 3.0
+    spatial_gain_mae_harm: 5.0
+    aligned_projector_harm: 3.0
+    far_failure: 2.0
+    triple_win_reference: 1.0
+  target_reference_records: 50
+  target_new_records: 50
+  target_new_hard_negative_pairs: 100
+  minimum_contact_regions: 3
+  repeats_per_region: 3
+  hard_negative_pairs_per_new_record: 2
+  maximum_debug_cases: 100
+
+phase4h_factorized_intensity_oof_v1:
+  # Phase4H failure branch: diagnose shape/intensity observability on strict OOF only.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  ttc_predictions_csv: ""
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  oof_evaluation_json: outputs/metrics/phase4h_oof_evaluation_v1.json
+  frontier_json: outputs/cache/phase4h_dino_frontier_v1.json
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  ablation_candidate_csv: outputs/cache/phase4h_dino_ablation_oof_v1_candidates.csv
+  factor_index_npz: /mnt/data/cheng/haptic-cache/phase4h_factorized_intensity_oof_v1/factor_index.npz
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4h_factorized_intensity_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4h_factorized_intensity_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  trajectory_history_frames: 16
+  trajectory_spatial_scale_px: 48.0
+  trajectory_speed_scale_px: 4.0
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  hidden_dim: 32
+  dropout: 0.2
+  batch_size: 64
+  epochs: 50
+  early_stopping_patience: 8
+  learning_rate: 0.0003
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260725
+  seeds: [20260725, 20260726, 20260727]
+  reuse_compatible_checkpoints: true
+  reuse_complete_query_output: true
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i_factorized_residual_cascade_oof_v1:
+  # Low-capacity OOF residual over V1; never hard-truncates the frozen Top-32.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  factor_candidate_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  cascade_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i_factorized_residual_cascade_oof_v1/cascade_checkpoints
+  gate_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i_factorized_residual_cascade_oof_v1/gate_checkpoints
+  query_output_csv: outputs/cache/phase4i_factorized_residual_cascade_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4i_factorized_residual_cascade_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4i_factorized_residual_cascade_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  maximum_dino_weight: 0.5
+  maximum_intensity_weight: 0.5
+  initial_weight_logit: -3.0
+  use_online_progress_features: false
+  target_temperature: 0.02
+  score_temperature: 1.0
+  residual_regularization: 0.05
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260726
+  seeds: [20260725, 20260726, 20260727]
+  gate_epochs: 80
+  gate_early_stopping_patience: 10
+  gate_learning_rate: 0.001
+  gate_weight_decay: 0.001
+  gate_inner_split_seed: 20260727
+  minimum_gate_coverage: 0.1
+  minimum_gate_precision: 0.8
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i1_factorized_residual_diagnostics_oof_v1:
+  # Corrected common-oracle metrics, residual counterfactuals, and an
+  # online-safe progress/risk gate. This never overwrites Phase4I outputs.
+  report_mode: phase4i1_corrected_oracle_counterfactual_gate_oof_v1
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  factor_candidate_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  cascade_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i1_factorized_residual_diagnostics_oof_v1/cascade_checkpoints
+  gate_checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i1_factorized_residual_diagnostics_oof_v1/gate_checkpoints
+  query_output_csv: outputs/cache/phase4i1_factorized_residual_diagnostics_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4i1_factorized_residual_diagnostics_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4i1_factorized_residual_diagnostics_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  maximum_dino_weight: 0.5
+  maximum_intensity_weight: 0.5
+  initial_weight_logit: -3.0
+  use_online_progress_features: true
+  target_temperature: 0.02
+  score_temperature: 1.0
+  residual_regularization: 0.05
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260726
+  seeds: [20260725, 20260726, 20260727]
+  gate_epochs: 80
+  gate_early_stopping_patience: 10
+  gate_learning_rate: 0.001
+  gate_weight_decay: 0.001
+  gate_inner_split_seed: 20260727
+  minimum_gate_coverage: 0.1
+  minimum_gate_precision: 0.8
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i2_ttc_robust_intensity_residual_oof_v1:
+  # Standalone intensity-only correction. DINO is used only inside the frozen
+  # intensity predictor; true probe and query tactile are never online inputs.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  factor_candidate_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i2_ttc_robust_intensity_residual_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i2_ttc_robust_intensity_residual_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4i2_ttc_robust_intensity_residual_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4i2_ttc_robust_intensity_residual_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  maximum_intensity_weight: 0.5
+  initial_weight_logit: -3.0
+  target_temperature: 0.02
+  score_temperature: 1.0
+  residual_regularization: 0.05
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260726
+  seeds: [20260725, 20260726, 20260727]
+  # These are predicted-TTC groups, never ground-truth probe buckets.
+  predicted_ttc_groups: [30.0, 60.0]
+  entropy_attenuation: 0.35
+  padding_attenuation: 0.5
+  far_entropy_attenuation: 0.25
+  minimum_attenuation: 0.25
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i3_monotonic_ttc_scale_oof_v1:
+  # Low-capacity post-calibration of the frozen Phase4I.2 residual. Scale
+  # selection is nested inside each outer OOF fold and uses predicted TTC only.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  v1_query_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_queries.csv
+  v1_candidate_csv: outputs/cache/phase4e_oof_multiscale_cache_v1_candidates.csv
+  factor_candidate_csv: outputs/cache/phase4h_factorized_intensity_oof_v1_candidates.csv
+  phase4i2_query_csv: outputs/cache/phase4i2_ttc_robust_intensity_residual_oof_v1_queries.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i3_monotonic_ttc_scale_oof_v1/checkpoints
+  diagnostic_slice_csv: outputs/metrics/phase4i3_phase4i2_harm_slices_oof_v1.csv
+  diagnostic_record_csv: outputs/metrics/phase4i3_phase4i2_harm_records_oof_v1.csv
+  scale_grid_csv: outputs/metrics/phase4i3_monotonic_ttc_scale_grid_oof_v1.csv
+  query_output_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  candidate_output_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_candidates.csv
+  metrics_json: outputs/metrics/phase4i3_monotonic_ttc_scale_oof_v1.json
+  geometry_filter_k: 32
+  tactile_size: 96
+  tactile_mask_threshold: 0.04
+  maximum_intensity_weight: 0.5
+  initial_weight_logit: -3.0
+  predicted_ttc_groups: [30.0, 60.0]
+  entropy_attenuation: 0.35
+  padding_attenuation: 0.5
+  far_entropy_attenuation: 0.25
+  minimum_attenuation: 0.25
+  target_temperature: 0.02
+  score_temperature: 1.0
+  residual_regularization: 0.05
+  batch_size: 64
+  epochs: 80
+  early_stopping_patience: 10
+  learning_rate: 0.001
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  inner_validation_fraction: 0.1
+  inner_split_seed: 20260726
+  scale_calibration_fraction: 0.1
+  scale_calibration_seed: 20260728
+  seeds: [20260725, 20260726, 20260727]
+  scale_grid: [0.0, 0.25, 0.5, 1.0]
+  selection_guard_epsilon: 0.000000000001
+  maximum_diagnostic_records: 100
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i4_far_risk_gate_oof_v1:
+  # Predict whether the deployable current state is actually far from contact.
+  # True probe is an offline binary target only and is never an input feature.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i4_far_risk_gate_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i4_far_risk_gate_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i4_far_risk_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i4_far_risk_gate_oof_v1.json
+  far_probe_minimum: 75
+  threshold_calibration_fraction: 0.1
+  threshold_calibration_seed: 20260729
+  early_stop_fraction: 0.1
+  early_stop_seed: 20260730
+  seeds: [20260725, 20260726, 20260727]
+  batch_size: 64
+  epochs: 100
+  early_stopping_patience: 12
+  learning_rate: 0.01
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i5_temporal_progress_oof_v1:
+  # Four online frames add visual approach cues missing from scalar TTC/motion.
+  # True probe is used only for offline progress/TTC supervision and evaluation.
+  seed: 20260725
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  motion_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  feature_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/temporal_dino
+  feature_metrics_json: outputs/metrics/phase4i5_temporal_dino_features_v1.json
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i5_temporal_progress_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i5_temporal_progress_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i5_temporal_progress_oof_v1.json
+  frame_offsets: [-15, -10, -5, 0]
+  crop_size: 192
+  maximum_missing_frame_fraction: 0.0
+  minimum_valid_frames: 4
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  dino_layer: 12
+  center_sigma: 0.35
+  batch_size: 32
+  projection_dim: 128
+  hidden_dim: 64
+  dropout: 0.1
+  near_probe_maximum: 20
+  mid_probe_maximum: 50
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_loss_weight: 0.5
+  ordinal_loss_weight: 0.25
+  threshold_calibration_fraction: 0.1
+  threshold_calibration_seed: 20260731
+  early_stop_fraction: 0.1
+  early_stop_seed: 20260801
+  seeds: [20260725, 20260726, 20260727]
+  train_batch_size: 64
+  epochs: 60
+  early_stopping_patience: 10
+  learning_rate: 0.0003
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i5a_far_safety_recalibration_oof_v1:
+  # Threshold-only safety margin over frozen Phase4I.5 strict-OOF probabilities.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  phase4i5_query_csv: outputs/cache/phase4i5_temporal_progress_oof_v1_queries.csv
+  phase4i5_threshold_csv: outputs/metrics/phase4i5_temporal_progress_thresholds_oof_v1.csv
+  query_output_csv: outputs/cache/phase4i5a_far_safety_recalibration_oof_v1_queries.csv
+  threshold_output_csv: outputs/metrics/phase4i5a_far_safety_thresholds_oof_v1.csv
+  metrics_json: outputs/metrics/phase4i5a_far_safety_recalibration_oof_v1.json
+  calibration_far_recall_target: 0.97
+  minimum_far_recall: 0.9
+  minimum_near_mid_retention: 0.5
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260725
+
+phase4i5b_temporal_far_false_negative_audit_v1:
+  # Read-only audit of the 71 true-far samples missed by frozen Phase4I.5a.
+  samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  phase4i3_query_csv: outputs/cache/phase4i3_monotonic_ttc_scale_oof_v1_queries.csv
+  phase4i5a_query_csv: outputs/cache/phase4i5a_far_safety_recalibration_oof_v1_queries.csv
+  feature_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i5_temporal_progress_oof_v1/temporal_dino
+  query_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_queries_v1.csv
+  slice_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_slices_v1.csv
+  record_output_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_records_v1.csv
+  metrics_json: outputs/metrics/phase4i5b_temporal_far_false_negative_audit_v1.json
+  expected_false_negative_queries: 71
+  metric_epsilon: 0.000000000001
+  high_confidence_miss_margin: 0.15
+  miss_margin_first_boundary: 0.05
+  miss_margin_second_boundary: 0.15
+  ttc_error_first_boundary: 10.0
+  ttc_error_second_boundary: 20.0
+  concentration_top_records: 10
+  maximum_record_rows: 100
+
+phase4i6_temporal_far_collection_plan_v1:
+  # Record-disjoint paired collection plan from frozen Phase4I.5b OOF misses.
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  audit_query_csv: outputs/metrics/phase4i5b_temporal_far_false_negative_queries_v1.csv
+  audit_metrics_json: outputs/metrics/phase4i5b_temporal_far_false_negative_audit_v1.json
+  reference_output_csv: outputs/metrics/phase4i6_temporal_far_collection_references_v1.csv
+  collection_plan_csv: outputs/metrics/phase4i6_temporal_far_collection_plan_v1.csv
+  metrics_json: outputs/metrics/phase4i6_temporal_far_collection_plan_v1.json
+  expected_false_negative_queries: 71
+  expected_changed_cache_queries: 3
+  expected_identity_unchanged_queries: 68
+  target_reference_records: 20
+  target_new_records: 60
+  target_new_far_queries: 120
+  probe_focus: [75, 100]
+  severe_ttc_underestimate_frames: 20.0
+  priority_weights:
+    changed_harm: 100.0
+    high_confidence_false_negative: 20.0
+    severe_ttc_underestimate: 10.0
+    underestimate_per_frame: 0.1
+    probe100: 2.0
+  shared_motion_profiles:
+    - straight_constant_velocity
+    - straight_accelerating
+    - straight_decelerating
+    - turning_constant_speed
+    - turning_variable_speed
+    - pause_resume
+  pair_designs:
+    - name: same_region_different_speed
+      variant_a: slow_approach
+      variant_b: fast_approach
+    - name: same_speed_different_start_distance
+      variant_a: short_remaining_distance
+      variant_b: long_remaining_distance
+    - name: same_region_progress_contrast
+      variant_a: earlier_progress_state
+      variant_b: later_progress_state
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  print_reference_limit: 20
+
+phase4i6_temporal_far_data_validation_v1:
+  # Structural acceptance gate before any Phase4I.6 TTC retraining.
+  completed_plan_csv: data/processed/phase4i6_temporal_far/collection_manifest.csv
+  new_samples_csv: data/processed/phase4i6_temporal_far/region_samples_auto.csv
+  new_motion_tracks_csv: data/processed/phase4i6_temporal_far/sensor_tracks_auto.csv
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/metrics/phase4i6_temporal_far_data_query_audit_v1.csv
+  record_output_csv: outputs/metrics/phase4i6_temporal_far_data_record_audit_v1.csv
+  metrics_json: outputs/metrics/phase4i6_temporal_far_data_validation_v1.json
+  expected_new_records: 60
+  expected_new_far_queries: 120
+  probe_focus: [75, 100]
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  allow_unplanned_records: false
+
+phase4i6_raw_candidate_partition_v1:
+  # Freeze before label generation; split 3 is untouched by V4 and V2 final.
+  split: "3"
+  record_start: 0
+  record_limit: 300
+  expected_first_record: rec_03000
+  expected_last_record: rec_03299
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  output_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  summary_json: data/processed/phase4i6_temporal_far/raw_candidate_partitions.json
+
+expanded_region_dataset_phase4i6_candidate_pool_v1:
+  # Overcomplete pool; the later selector may keep only verified paired cases.
+  split: "3"
+  record_start: 0
+  record_limit: 300
+  purpose_partition_manifest: data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  expected_purpose_partition: development_candidate
+  output_csv: data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+  tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase4i6_temporal_far/candidate_pool/contact_index_auto.csv
+  skipped_csv: data/processed/phase4i6_temporal_far/candidate_pool/skipped_auto.csv
+  summary_json: data/processed/phase4i6_temporal_far/candidate_pool/summary_auto.json
+  record_split_manifest: data/processed/phase4i6_temporal_far/candidate_pool/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool/debug
+  debug_samples: 60
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 1.0
+  split_val: 0.0
+  final_holdout_count: 0
+  record_split_seed: 20260730
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
+
+phase4i6b_temporal_far_candidate_pool_audit_v1:
+  # Read-only strict eligibility and motion-diversity audit.
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+  candidate_partition_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/metrics/phase4i6b_temporal_far_candidate_query_audit_v1.csv
+  record_output_csv: outputs/metrics/phase4i6b_temporal_far_candidate_record_audit_v1.csv
+  metrics_json: outputs/metrics/phase4i6b_temporal_far_candidate_pool_audit_v1.json
+  probe_focus: [75, 100]
+  target_new_records: 60
+  minimum_records_per_motion_profile: 10
+  motion_profiles:
+    - straight_constant_velocity
+    - straight_accelerating
+    - straight_decelerating
+    - turning_constant_speed
+    - turning_variable_speed
+    - pause_resume
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
+
+phase4i6c_robust_motion_quality_audit_v1:
+  # Diagnose stop-jump localizer noise before visual/contact pair selection.
+  phase4i6b_record_csv: outputs/metrics/phase4i6b_temporal_far_candidate_record_audit_v1.csv
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+  output_csv: outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+  metrics_json: outputs/metrics/phase4i6c_robust_motion_quality_audit_v1.json
+  reference_probe: 100
+  target_new_records: 60
+  history_frames: 32
+  # 192x128 argmax heatmaps mapped to 768x512 produce a 4 px grid.
+  localizer_input_width: 192
+  localizer_input_height: 128
+  expected_coordinate_quantization_px: 4.0
+  maximum_plausible_step_px: 17.0
+  maximum_single_step_px: 34.0
+  maximum_jump_ratio: 0.10
+  maximum_tip_base_length_cv: 0.20
+  minimum_velocity_coherence: 0.0
+  maximum_velocity_residual_p90_px: 11.5
+  maximum_velocity_residual_max_px: 23.0
+  minimum_track_confidence: 0.25
+  coherence_step_threshold_px: 0.25
+  median_filter_radius: 1
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
+
+phase4i6d_raw_candidate_partition_b_v1:
+  # Independent expansion after calibrated robust audit left only 36/60 records.
+  split: "3"
+  record_start: 300
+  record_limit: 600
+  expected_first_record: rec_03300
+  expected_last_record: rec_03899
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  additional_forbidden_partition_csvs:
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+  output_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  summary_json: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.json
+
+expanded_region_dataset_phase4i6d_candidate_pool_b_v1:
+  # Preserve candidate pool A and apply the identical probe/track contract.
+  split: "3"
+  record_start: 300
+  record_limit: 600
+  purpose_partition_manifest: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  expected_purpose_partition: development_candidate
+  output_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  contact_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/contact_index_auto.csv
+  skipped_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/skipped_auto.csv
+  summary_json: data/processed/phase4i6_temporal_far/candidate_pool_b/summary_auto.json
+  record_split_manifest: data/processed/phase4i6_temporal_far/candidate_pool_b/record_splits_fixed.csv
+  heatmap_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool_b/heatmaps
+  debug_dir: /mnt/data/cheng/haptic-cache/phase4i6_temporal_far/candidate_pool_b/debug
+  debug_samples: 60
+  sensor_checkpoint: checkpoints/sensor_localizer/best.pt
+  ttc_values: [75, 100]
+  sequence_offsets: [15, 10, 5, 0]
+  trajectory_history_frames: 32
+  trajectory_track_stride: 1
+  split_train: 1.0
+  split_val: 0.0
+  final_holdout_count: 0
+  record_split_seed: 20260731
+  contact_box_size: 48
+  min_confidence: 0.25
+  min_tip_base_distance: 6.0
+  max_tip_base_distance: 45.0
+  excluded_records: []
+
+phase4i6d_temporal_far_candidate_pool_b_audit_v1:
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  candidate_partition_csv: data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  development_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  query_output_csv: outputs/metrics/phase4i6d_temporal_far_candidate_query_audit_b_v1.csv
+  record_output_csv: outputs/metrics/phase4i6d_temporal_far_candidate_record_audit_b_v1.csv
+  metrics_json: outputs/metrics/phase4i6d_temporal_far_candidate_pool_audit_b_v1.json
+  probe_focus: [75, 100]
+  target_new_records: 60
+  minimum_records_per_motion_profile: 10
+  motion_profiles:
+    - straight_constant_velocity
+    - straight_accelerating
+    - straight_decelerating
+    - turning_constant_speed
+    - turning_variable_speed
+    - pause_resume
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
+
+phase4i6d_robust_motion_quality_b_audit_v1:
+  # Reuse the calibrated 4 px localizer-grid contract without retuning on pool B.
+  phase4i6b_record_csv: outputs/metrics/phase4i6d_temporal_far_candidate_record_audit_b_v1.csv
+  candidate_samples_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_motion_tracks_csv: data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  output_csv: outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  metrics_json: outputs/metrics/phase4i6d_robust_motion_quality_audit_b_v1.json
+  reference_probe: 100
+  target_new_records: 60
+  history_frames: 32
+  localizer_input_width: 192
+  localizer_input_height: 128
+  expected_coordinate_quantization_px: 4.0
+  maximum_plausible_step_px: 17.0
+  maximum_single_step_px: 34.0
+  maximum_jump_ratio: 0.10
+  maximum_tip_base_length_cv: 0.20
+  minimum_velocity_coherence: 0.0
+  maximum_velocity_residual_p90_px: 11.5
+  maximum_velocity_residual_max_px: 23.0
+  minimum_track_confidence: 0.25
+  coherence_step_threshold_px: 0.25
+  median_filter_radius: 1
+  pause_step_threshold_px: 0.25
+  pause_ratio_threshold: 0.20
+  turning_stability_threshold: 0.85
+  turning_radians_threshold: 0.80
+  variable_speed_cv_threshold: 0.35
+  speed_slope_threshold: 0.15
+  print_record_limit: 30
+
+phase4i6e_visual_motion_pair_selection_v1:
+  # Merge only calibrated robust-pass records; DINO proposes pairs for review.
+  pool_names: [candidate_pool_a, candidate_pool_b]
+  robust_record_csvs:
+    - outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+    - outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  candidate_sample_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  target_records: 60
+  probe_focus: [75, 100]
+  descriptor_probe: 100
+  dino_model: dinov2_vits14
+  dino_input_size: 224
+  dino_layer_recipe: layer12
+  detail_crop_size: 48
+  context_crop_size: 96
+  center_sigma: 0.35
+  detail_weight: 0.6
+  context_weight: 0.4
+  batch_size: 16
+  device: auto
+  quantile_bins: 4
+  visual_top_k_schedule: [10, 20, 32, 64, 102]
+  motion_contrast_weight: 0.15
+  diversity_weight: 0.10
+  detail_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_detail
+  context_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_context
+  pair_output_csv: outputs/metrics/phase4i6e_visual_motion_pairs_v1.csv
+  selection_output_csv: outputs/metrics/phase4i6e_selected_records_v1.csv
+  selected_samples_csv: data/processed/phase4i6_temporal_far/selected_samples_proposed.csv
+  metrics_json: outputs/metrics/phase4i6e_visual_motion_pair_selection_v1.json
+  review_dir: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/review
+  review_contact_sheet: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/review_contact_sheet.jpg
+  print_pair_limit: 30
+
+phase4i6e_visual_motion_pair_selection_v2:
+  # V2 rejects weak within-pair motion contrast and uses wide visual context.
+  pool_names: [candidate_pool_a, candidate_pool_b]
+  robust_record_csvs:
+    - outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+    - outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  candidate_sample_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  target_records: 60
+  probe_focus: [75, 100]
+  descriptor_probe: 100
+  dino_model: dinov2_vits14
+  dino_input_size: 224
+  dino_layer_recipe: layer12
+  detail_crop_size: 48
+  context_crop_size: 96
+  wide_crop_size: 144
+  center_sigma: 0.35
+  detail_weight: 0.45
+  context_weight: 0.30
+  wide_weight: 0.25
+  batch_size: 16
+  device: auto
+  quantile_bins: 4
+  visual_top_k_schedule: [10, 20, 32, 64, 102]
+  minimum_motion_distance: 0.5
+  motion_contrast_weight: 0.15
+  diversity_weight: 0.10
+  detail_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_detail
+  context_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection/dino_context
+  wide_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/dino_wide
+  pair_output_csv: outputs/metrics/phase4i6e_visual_motion_pairs_v2.csv
+  selection_output_csv: outputs/metrics/phase4i6e_selected_records_v2.csv
+  selected_samples_csv: data/processed/phase4i6_temporal_far/selected_samples_proposed_v2.csv
+  metrics_json: outputs/metrics/phase4i6e_visual_motion_pair_selection_v2.json
+  review_dir: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review
+  review_contact_sheet: /mnt/data/cheng/haptic-cache/phase4i6e_pair_selection_v2/review_contact_sheet.jpg
+  print_pair_limit: 30
+
+phase4i6f_ttc_increment_v1:
+  # Strict visual review: ambiguous and visually mismatched V2 pairs excluded.
+  v2_pair_csv: outputs/metrics/phase4i6e_visual_motion_pairs_v2.csv
+  approved_pair_ids:
+    - pair_001
+    - pair_003
+    - pair_004
+    - pair_005
+    - pair_006
+    - pair_008
+    - pair_009
+    - pair_010
+    - pair_012
+    - pair_014
+    - pair_015
+    - pair_016
+    - pair_017
+    - pair_020
+    - pair_021
+    - pair_026
+    - pair_028
+  approval_source: strict_visual_review_confirmed_2026_07_27
+  minimum_approved_pair_motion_distance: 0.5
+  pool_names: [candidate_pool_a, candidate_pool_b]
+  robust_record_csvs:
+    - outputs/metrics/phase4i6c_robust_motion_quality_records_v1.csv
+    - outputs/metrics/phase4i6d_robust_motion_quality_records_b_v1.csv
+  candidate_sample_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/region_samples_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/region_samples_auto.csv
+  candidate_track_csvs:
+    - data/processed/phase4i6_temporal_far/candidate_pool/sensor_tracks_auto.csv
+    - data/processed/phase4i6_temporal_far/candidate_pool_b/sensor_tracks_auto.csv
+  candidate_partition_csvs:
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions.csv
+    - data/processed/phase4i6_temporal_far/raw_candidate_partitions_b.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  target_records: 60
+  probe_focus: [75, 100]
+  fold_count: 3
+  quantile_bins: 4
+  fill_distance_weight: 0.20
+  history_frames: 32
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  minimum_real_point_count: 32
+  minimum_history_span: 31
+  maximum_padding_ratio: 0
+  maximum_frame_gap: 1
+  require_paths_exist: true
+  record_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/records.csv
+  approved_pair_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/approved_pairs.csv
+  sample_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/region_samples_auto.csv
+  track_output_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/sensor_tracks_auto.csv
+  metrics_json: outputs/metrics/phase4i6f_ttc_increment_v1.json
+
+phase4i7_augmented_ttc_oof_v1:
+  # Clean control/augmented TTC comparison. Query inputs are four current-tip
+  # visual crops plus online trajectory geometry; true probe is target-only.
+  seed: 20260727
+  original_samples_csv: data/processed/phase35_development_pool_v4/region_samples_auto.csv
+  original_tracks_csv: data/processed/phase35_development_pool_v4/sensor_tracks_auto.csv
+  original_oof_predictions_csv: outputs/cache/proposal_ranker_oof_phase35_combined_v4/predictions.csv
+  increment_samples_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/region_samples_auto.csv
+  increment_tracks_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/sensor_tracks_auto.csv
+  increment_metrics_json: outputs/metrics/phase4i6f_ttc_increment_v1.json
+  approved_pair_csv: data/processed/phase4i6_temporal_far/ttc_increment_v1/approved_pairs.csv
+  final_partition_csv: data/processed/phase4f_v2_record_partitions.csv
+  feature_cache_prefix: /mnt/data/cheng/haptic-cache/phase4i7_augmented_ttc_oof_v1/temporal_dino
+  feature_metrics_json: outputs/metrics/phase4i7_augmented_ttc_features_v1.json
+  checkpoint_dir: /mnt/data/cheng/haptic-cache/phase4i7_augmented_ttc_oof_v1/checkpoints
+  query_output_csv: outputs/cache/phase4i7_augmented_ttc_oof_v1_queries.csv
+  metrics_json: outputs/metrics/phase4i7_augmented_ttc_oof_v1.json
+  frame_offsets: [-15, -10, -5, 0]
+  crop_size: 192
+  maximum_missing_frame_fraction: 0.0
+  minimum_valid_frames: 4
+  trajectory_history_frames: 32
+  minimum_motion_valid_frames: 16
+  spatial_scale_px: 48.0
+  speed_scale_px: 4.0
+  dino_model: dinov2_vits14
+  dino_image_size: 224
+  dino_layer: 12
+  center_sigma: 0.35
+  batch_size: 32
+  projection_dim: 128
+  hidden_dim: 64
+  motion_hidden_dim: 64
+  dropout: 0.1
+  near_probe_maximum: 20
+  mid_probe_maximum: 50
+  ttc_values: [5, 10, 20, 30, 50, 75, 100]
+  ttc_loss_weight: 0.5
+  ordinal_loss_weight: 0.25
+  monotonic_loss_weight: 0.25
+  monotonic_minimum_gap_frames: 15.0
+  pair_consistency_loss_weight: 0.25
+  pair_batch_size: 64
+  early_stop_fraction: 0.1
+  early_stop_seed: 20260801
+  seeds: [20260727, 20260728, 20260729]
+  train_batch_size: 64
+  inference_batch_size: 256
+  epochs: 60
+  early_stopping_patience: 10
+  learning_rate: 0.0003
+  weight_decay: 0.001
+  gradient_clip: 1.0
+  bootstrap_iterations: 2000
+  bootstrap_seed: 20260727
+  maximum_original_mae_regression_frames: 0.25
+  maximum_original_far_recall_regression: 0.01
